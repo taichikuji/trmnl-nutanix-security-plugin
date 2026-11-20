@@ -16,22 +16,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test security data transform
+      - name: Test schedule transform
         run: node --test TRMNL/tests/transform.test.cjs
       - name: Render and check layouts
         run: ./scripts/preview
       - name: Lint templates
         run: docker run --rm --volume "$PWD/TRMNL:/plugin" trmnl/trmnlp:v0.32.3 lint
-      - name: Build private import ZIP
-        run: python3 scripts/package-import.py
       - name: Save previews and report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: previews
           path: TRMNL/_build/
-      - name: Save private import ZIP
-        uses: actions/upload-artifact@v4
-        with:
-          name: private-plugin
-          path: dist/trmnl-nutanix-sec-plugin.zip

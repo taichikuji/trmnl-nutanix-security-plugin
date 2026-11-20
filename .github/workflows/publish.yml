@@ -1,12 +1,12 @@
 name: Publish to TRMNL
 
 on:
-  workflow_dispatch:
   push:
     branches: [main]
     paths:
       - 'TRMNL/src/**'
       - '.github/workflows/publish.yml'
+  workflow_dispatch:
 
 concurrency:
   group: publish-trmnl
@@ -33,11 +33,8 @@ jobs:
           TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
           TRMNL_PLUGIN_SETTING_ID: ${{ secrets.TRMNL_PLUGIN_SETTING_ID }}
         run: |
-          if [ -z "$TRMNL_API_KEY" ] || [ -z "$TRMNL_PLUGIN_SETTING_ID" ]; then
-            echo "::notice::Set TRMNL_API_KEY and TRMNL_PLUGIN_SETTING_ID to enable publishing."
-            test "$GITHUB_EVENT_NAME" != workflow_dispatch
-            exit
-          fi
+          test -n "$TRMNL_API_KEY"
+          test -n "$TRMNL_PLUGIN_SETTING_ID"
           docker run --rm \
             --volume "$(pwd):/plugin" \
             --env TRMNL_API_KEY \
