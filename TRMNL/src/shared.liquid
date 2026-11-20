@@ -1,0 +1,179 @@
+{% template nutanix_table %}
+{% comment %}
+  Nutanix Security Advisories and NXVD, with normalized official Nutanix API data.
+  Security Advisories currently returns ascending publication dates; reverse the array
+  to show recent entries first. These are publications, NOT open issues or
+  proof of exposure/patch status. Deliberately never render docUrl (internal).
+{% endcomment %}
+{% assign current_mode = mode | default: 'advisories' %}
+{% assign advisory_rows = content.body | reverse %}
+{% assign total = content.body.size | default: 0 %}
+{% assign critical = 0 %}
+{% assign high = 0 %}
+{% for advisory in content.body %}
+  {% if advisory.criticality == 'Critical' %}{% assign critical = critical | plus: 1 %}{% endif %}
+  {% if advisory.criticality == 'High' %}{% assign high = high | plus: 1 %}{% endif %}
+{% endfor %}
+<style>
+  .nt { display:flex; flex-direction:column; width:100%; height:100%; overflow:hidden; color:#000; background:#fff; font-family:inherit; }
+  .nt, .nt * { box-sizing:border-box; }
+  .nt-top { display:flex; align-items:center; justify-content:space-between; gap:8px; flex:none; height:28px; border:1px solid #000; border-bottom:0; padding:3px 8px; }
+  .nt-top__title { font-size:14px; font-weight:700; letter-spacing:0.01em; white-space:nowrap; }
+  .nt-top__meta { font-size:11px; text-align:right; white-space:nowrap; }
+  .nt-panel { width:100%; flex:1; min-height:0; overflow:hidden; }
+  .nt-table { width:100%; table-layout:fixed; border-collapse:collapse; border:1px solid #000; color:#000; background:#fff; }
+  .nt-table th { text-align:left; font-weight:700; font-size:11px; line-height:1.2; padding:6px 5px; vertical-align:middle; border-right:1px solid #000; border-bottom:2px solid #000; }
+  .nt-table td { font-size:11px; line-height:1.26; padding:6px 5px; vertical-align:top; border-bottom:1px solid #000; overflow:hidden; overflow-wrap:anywhere; }
+  .nt-table th:last-child, .nt-table td:last-child { border-right:0; }
+  .nt-table tbody tr:nth-child(even) { background:#fff; }
+  .nt-id { display:block; font-weight:700; text-decoration:underline; white-space:nowrap; font-size:11px; }
+  .nt-desc { font-size:11px; line-height:1.25; }
+  .nt-clamp-1, .nt-clamp-2, .nt-clamp-3 { display:-webkit-box; -webkit-box-orient:vertical; overflow:hidden; }
+  .nt-clamp-1 { -webkit-line-clamp:1; }
+  .nt-clamp-2 { -webkit-line-clamp:2; }
+  .nt-clamp-3 { -webkit-line-clamp:3; }
+  .nt-severity { font-weight:700; }
+  .nt-severity--critical { background:#000; color:#fff; padding:1px 4px; display:inline-block; }
+  .nt-severity--high { border:1px solid #000; padding:0 3px; display:inline-block; }
+  .nt-date { white-space:normal; }
+  .nt-doc { font-weight:700; text-decoration:underline; }
+  .nt-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; gap:6px; height:70%; border:1px solid #000; }
+  .nt-empty strong { font-size:16px; }
+  .nt-note { font-size:10px; flex:none; padding:4px 2px 0; }
+  .nt--full .nt-col-id { width:15%; }
+  .nt--full .nt-col-nx-id { width:20%; }
+  .nt--full .nt-col-nx-cve { width:21%; }
+  .nt--full .nt-col-nx-product { width:12%; }
+  .nt--full .nt-col-nx-severity { width:12%; }
+  .nt--full .nt-col-nx-package { width:15%; }
+  .nt--full .nt-col-nx-fixed { width:20%; }
+  .nt--half_horizontal .nt-col-nx-id { width:25%; }
+  .nt--half_horizontal .nt-col-nx-product { width:15%; }
+  .nt--half_horizontal .nt-col-nx-severity { width:15%; }
+  .nt--half_horizontal .nt-col-nx-package { width:20%; }
+  .nt--half_horizontal .nt-col-nx-fixed { width:25%; }
+  .nt--half_vertical .nt-col-nx-id { width:55%; }
+  .nt--half_vertical .nt-col-nx-severity { width:22%; }
+  .nt--half_vertical .nt-col-nx-product { width:23%; }
+  .nt--quadrant .nt-col-nx-id { width:73%; }
+  .nt--quadrant .nt-col-nx-severity { width:27%; }
+  .nt-nx-cve { display:block; font-size:10px; line-height:1.2; }
+  .nt--full .nt-col-severity { width:10%; }
+  .nt--full .nt-col-date { width:15%; }
+  .nt--full .nt-col-products { width:22%; }
+  .nt--full .nt-col-summary { width:28%; }
+  .nt--full .nt-col-link { width:10%; }
+  .nt--half_horizontal .nt-col-id { width:23%; }
+  .nt--half_horizontal .nt-col-severity { width:13%; }
+  .nt--half_horizontal .nt-col-date { width:18%; }
+  .nt--half_horizontal .nt-col-summary { width:46%; }
+  .nt--half_vertical .nt-col-id { width:57%; }
+  .nt--half_vertical .nt-col-severity { width:20%; }
+  .nt--half_vertical .nt-col-date { width:23%; }
+  .nt--quadrant .nt-col-id { width:76%; }
+  .nt--quadrant .nt-col-severity { width:24%; }
+  .nt--half_vertical .nt-table td, .nt--quadrant .nt-table td { padding:5px 4px; }
+  .nt--quadrant .nt-top { height:24px; padding:2px 4px; }
+  .nt--quadrant .nt-top__title { font-size:12px; }
+  .nt--quadrant .nt-top__meta { font-size:10px; }
+  .nt--quadrant .nt-note { font-size:9px; }
+  .nt--half_horizontal .nt-table tbody tr:nth-child(n+4) { display:none; }
+  .nt--half_vertical .nt-table tbody tr:nth-child(n+7) { display:none; }
+  .nt--quadrant .nt-table tbody tr:nth-child(n+3) { display:none; }
+  @media (max-width:900px) and (min-height:400px) {
+    .nt--full .nt-table tbody tr:nth-child(n+8) { display:none; }
+  }
+  @media (orientation:portrait) {
+    .nt--full .nt-col-id { width:18%; }
+    .nt--full .nt-col-severity { width:12%; }
+    .nt--full .nt-col-date { width:17%; }
+    .nt--full .nt-col-products { width:22%; }
+    .nt--full .nt-col-summary { width:25%; }
+    .nt--full .nt-col-link { width:10%; }
+  }
+</style>
+
+<div class="layout layout--col layout--stretch" style="height:100%;width:100%;overflow:hidden">
+<div class="nt nt--{{ view }}">
+  <div class="nt-top">
+    <span class="nt-top__title">
+      {% if current_mode == 'nxvd' %}{% if view == 'quadrant' %}NUTANIX NXVD{% else %}NUTANIX / VULNERABILITIES{% endif %}
+      {% else %}{% if view == 'quadrant' %}NUTANIX SA{% elsif view == 'half_vertical' %}NUTANIX SECURITY{% else %}NUTANIX / SECURITY ADVISORIES{% endif %}{% endif %}
+    </span>
+    <span class="nt-top__meta">
+      {% if feed_state == 'ERROR' %}SOURCE ERROR
+      {% elsif current_mode == 'nxvd' %}{% if view == 'quadrant' or view == 'half_vertical' %}{{ nxvd.total }} returned{% else %}{{ nxvd.total }} returned &nbsp;·&nbsp; {{ nxvd.critical }} critical &nbsp;·&nbsp; {{ nxvd.high }} high{% endif %}
+      {% elsif total > 0 %}{% if view == 'half_vertical' or view == 'quadrant' %}{{ total }} · {{ critical }}C · {{ high }}H{% else %}{{ total }} published &nbsp;·&nbsp; {{ critical }} critical &nbsp;·&nbsp; {{ high }} high{% endif %}
+      {% else %}No entries{% endif %}
+    </span>
+  </div>
+  {% if feed_state == 'ERROR' %}
+    <div class="nt-empty"><strong>Nutanix source unavailable</strong><span>{{ source_error | default: 'SOURCE ERROR' | escape }}</span><span>{{ source_message | default: 'Check plugin Debug Logs.' | escape }}</span></div>
+  {% elsif current_mode == 'nxvd' %}
+    {% if nxvd.total > 0 %}
+    <div class="nt-panel">
+      <table class="nt-table">
+        <thead><tr>
+          <th class="nt-col-nx-id">Advisory</th>
+          {% if view == 'full' %}<th class="nt-col-nx-cve">CVE</th>{% endif %}
+          {% unless view == 'quadrant' %}<th class="nt-col-nx-product">Product</th>{% endunless %}
+          <th class="nt-col-nx-severity">Severity</th>
+          {% if view == 'full' or view == 'half_horizontal' %}<th class="nt-col-nx-package">Package</th><th class="nt-col-nx-fixed">Fixed releases</th>{% endif %}
+        </tr></thead>
+        <tbody>
+          {% for entry in nxvd.rows limit: 12 %}
+          <tr>
+            <td>
+              {% if entry.cesa != blank or view == 'full' %}<span class="nt-id">{{ entry.cesa | default: '—' | escape }}</span>{% endif %}
+              {% if view == 'half_vertical' or view == 'quadrant' or view == 'half_horizontal' and entry.cesa == blank %}<span class="nt-nx-cve nt-clamp-2">{{ entry.cve | default: '—' | escape }}</span>{% endif %}
+            </td>
+            {% if view == 'full' %}<td><span class="nt-clamp-2">{{ entry.cve | default: '—' | escape }}</span></td>{% endif %}
+            {% unless view == 'quadrant' %}<td><span class="nt-clamp-2">{{ entry.product | escape }}</span></td>{% endunless %}
+            <td>{% if entry.severity == 'Critical' %}<span class="nt-severity nt-severity--critical">Critical</span>{% elsif entry.severity == 'High' %}<span class="nt-severity nt-severity--high">High</span>{% else %}<span class="nt-severity">{{ entry.severity | escape }}</span>{% endif %}{% if view == 'full' and entry.cvss != blank %}<span class="nt-nx-cve">CVSS {{ entry.cvss | escape }}</span>{% endif %}</td>
+            {% if view == 'full' or view == 'half_horizontal' %}<td><span class="nt-clamp-2">{{ entry.package | default: '—' | escape }}</span></td><td><span class="nt-clamp-2">{{ entry.fixed | default: '—' | escape }}</span></td>{% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="nt-empty"><strong>No records returned</strong><span>Check the selected product and official source</span></div>
+    {% endif %}
+  {% else %}
+    {% if total > 0 %}
+    <div class="nt-panel">
+      <table class="nt-table">
+        <thead><tr>
+          <th class="nt-col-id">Security Advisories</th>
+          <th class="nt-col-severity">Severity</th>
+          {% unless view == 'quadrant' %}<th class="nt-col-date">Date</th>{% endunless %}
+          {% if view == 'full' %}<th class="nt-col-products">Affected Versions</th>{% endif %}
+          {% if view == 'full' or view == 'half_horizontal' %}<th class="nt-col-summary">Description</th>{% endif %}
+          {% if view == 'full' %}<th class="nt-col-link">Download</th>{% endif %}
+        </tr></thead>
+        <tbody>
+          {% for advisory in advisory_rows limit: 12 %}
+          <tr>
+            <td>
+              <span class="nt-id">SA #{{ advisory.advisoryNumber | escape }}</span>
+              {% if view == 'half_vertical' or view == 'quadrant' %}<span class="nt-desc nt-clamp-2">{{ advisory.summary | escape }}</span>{% endif %}
+            </td>
+            <td>{% if advisory.criticality == 'Critical' %}<span class="nt-severity nt-severity--critical">Critical</span>{% elsif advisory.criticality == 'High' %}<span class="nt-severity nt-severity--high">High</span>{% elsif advisory.criticality != blank %}<span class="nt-severity">{{ advisory.criticality | escape }}</span>{% else %}—{% endif %}</td>
+            {% unless view == 'quadrant' %}<td class="nt-date">{{ advisory.date | escape }}</td>{% endunless %}
+            {% if view == 'full' %}<td><span class="nt-clamp-3">{{ advisory.affectedVersions | default: '—' | escape }}</span></td>{% endif %}
+            {% if view == 'full' or view == 'half_horizontal' %}<td><span class="nt-desc nt-clamp-3">{{ advisory.summary | default: '—' | escape }}</span></td>{% endif %}
+            {% if view == 'full' %}<td>{% if advisory.href contains 'https://download.nutanix.com/alerts/' %}<a class="nt-doc" href="{{ advisory.href | escape }}">PDF</a>{% else %}—{% endif %}</td>{% endif %}
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+      <div class="nt-empty"><strong>No advisories returned</strong><span>Check the official source</span></div>
+    {% endif %}
+  {% endif %}
+  <div class="nt-note">{% if current_mode == 'nxvd' %}Nutanix NXVD · Released fixes by CVSS · Verify deployed versions{% else %}Official Nutanix publications · Not a cluster exposure assessment{% endif %}</div>
+</div>
+</div>
+<div class="title_bar"><span class="title">Nutanix Security</span><span class="instance">Independent viewer · portal.nutanix.com</span></div>
+{% endtemplate %}
