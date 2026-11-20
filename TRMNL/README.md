@@ -32,7 +32,20 @@ Recorded on November 20, 2026 using public Nutanix data.
 
 ## Templates
 
-[Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication and shows how many advisories share its date. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available. The four templates choose how many additional items fit beside or below the lead.
+[Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available.
+
+The full OG view stacks the lead and table. The full landscape X view uses a separate lead panel beside a wider table with dedicated publication dates or product and fixed-release columns. Portrait views stack the content. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
+
+The native table fits rows to the space available. These landscape previews use the same public data for both devices. Counts include the featured item and vary with the feed, title lengths, and display scale. [TRMNL table overflow](https://trmnl.com/framework/docs/3.4/table_overflow)
+
+| Layout | OG Advisories | X Advisories | OG NXVD | X NXVD |
+| --- | ---: | ---: | ---: | ---: |
+| Full | 9 | 22 | 8 | 15 |
+| Half horizontal | 6 | 9 | 6 | 8 |
+| Half vertical | 9 | 16 | 8 | 15 |
+| Quadrant | 1 | 6 | 1 | 5 |
+
+The sample NXVD page supplied 15 fixes. The full landscape X regression shows all 20 fixes on a filled page.
 
 ## Data behavior
 
