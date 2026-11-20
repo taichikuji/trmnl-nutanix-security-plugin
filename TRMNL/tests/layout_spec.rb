@@ -16,7 +16,7 @@ RSpec.describe 'Nutanix Security layouts' do
   cases = {
     'advisories' => ['advisories', { "GET #{advisories_url}" => { json: { content: { body: [advisory] } } } }, 'SA #0001'],
     'nxvd' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [released] } } }, 'CVE-2099-1000'],
-    'nxvd-empty' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [] } } }, 'No records returned'],
+    'nxvd-empty' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [] } } }, 'No released fixes on this page'],
     'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503']
   }
   devices = {
@@ -35,6 +35,13 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen).to have_text(label)
           expect(screen).to have_no_text('ALL CLEAR')
           expect(screen.result.requests.size).to eq(1)
+
+          if scenario == 'nxvd'
+            expect(screen).to have_text('1 on page')
+          end
+          if mode == 'nxvd' && %w[half_vertical quadrant].include?(view)
+            expect(screen.find('.title_bar .instance').text).to eq('portal.nutanix.com')
+          end
 
           request = screen.result.requests.first
           expect(request).to include(mocked: true, via: :transform)

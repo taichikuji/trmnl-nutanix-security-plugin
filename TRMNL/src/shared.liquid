@@ -102,7 +102,7 @@
     </span>
     <span class="nt-top__meta">
       {% if feed_state == 'ERROR' %}SOURCE ERROR
-      {% elsif current_mode == 'nxvd' %}{% if view == 'quadrant' or view == 'half_vertical' %}{{ nxvd.total }} returned{% else %}{{ nxvd.total }} returned &nbsp;·&nbsp; {{ nxvd.critical }} critical &nbsp;·&nbsp; {{ nxvd.high }} high{% endif %}
+      {% elsif current_mode == 'nxvd' %}{{ nxvd.total }} on page{% if view == 'full' or view == 'half_horizontal' %} &nbsp;·&nbsp; {{ nxvd.critical }} critical &nbsp;·&nbsp; {{ nxvd.high }} high{% endif %}
       {% elsif total > 0 %}{% if view == 'half_vertical' or view == 'quadrant' %}{{ total }} · {{ critical }}C · {{ high }}H{% else %}{{ total }} published &nbsp;·&nbsp; {{ critical }} critical &nbsp;·&nbsp; {{ high }} high{% endif %}
       {% else %}No entries{% endif %}
     </span>
@@ -137,7 +137,7 @@
       </table>
     </div>
     {% else %}
-      <div class="nt-empty"><strong>No records returned</strong><span>Check the selected product and official source</span></div>
+      <div class="nt-empty"><strong>No released fixes on this page</strong><span>Check the selected product and official NXVD</span></div>
     {% endif %}
   {% else %}
     {% if total > 0 %}
@@ -175,5 +175,11 @@
   <div class="nt-note">{% if current_mode == 'nxvd' %}Nutanix NXVD · Released fixes by CVSS · Verify deployed versions{% else %}Official Nutanix publications · Not a cluster exposure assessment{% endif %}</div>
 </div>
 </div>
-<div class="title_bar"><span class="title">Nutanix Security</span><span class="instance">Independent viewer · portal.nutanix.com</span></div>
+{% assign instance_label = 'Independent viewer · portal.nutanix.com' %}
+{% if current_mode == 'nxvd' %}
+  {% if view == 'half_vertical' or view == 'quadrant' %}
+    {% assign instance_label = 'portal.nutanix.com' %}
+  {% endif %}
+{% endif %}
+<div class="title_bar"><span class="title">Nutanix Security</span><span class="instance">{{ instance_label }}</span></div>
 {% endtemplate %}

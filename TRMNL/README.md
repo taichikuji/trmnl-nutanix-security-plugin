@@ -36,7 +36,9 @@ Recorded on November 20, 2026 using public Nutanix data.
 
 ## Data behavior
 
-Each refresh makes one request to the selected Nutanix feed. Advisories uses a GET. NXVD uses a POST for the first page of up to 20 rows in descending CVSS order, with a product filter when selected. The NXVD count reflects the released rows in that page. Check deployed versions separately to determine which fixes a cluster has.
+Each refresh makes one request to the selected Nutanix feed. Advisories uses a GET and displays publication dates. NXVD uses a POST for the first page in descending CVSS order, with a product filter when selected. Nutanix can return fewer than the requested 20 rows, and the counts on screen cover only released fixes in that page. Check deployed versions separately to determine which fixes a cluster has.
+
+The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
 
 The portal endpoints are undocumented and may change. Empty responses and source errors have separate messages. To diagnose a refresh failure, enable **Debug Logs** in the private plugin settings.
 
