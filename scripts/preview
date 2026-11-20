@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+docker run --rm --init --shm-size=512m \
+  --volume "$PWD/TRMNL:/plugin" \
+  trmnl/trmnlp:v0.32.3 test tests/layout_spec.rb --report _build/report

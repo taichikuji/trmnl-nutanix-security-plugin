@@ -1,0 +1,60 @@
+# Nutanix Security for TRMNL
+
+## Setup
+
+From the repository root, build the private plugin ZIP:
+
+```sh
+python3 scripts/package-import.py
+```
+
+On the [Private Plugins page](https://trmnl.com/plugin_settings?keyname=private_plugin), select **Import new** and upload `dist/trmnl-nutanix-sec-plugin.zip`. Choose **Table to display** in the plugin settings. **Product (NXVD)** applies to the vulnerabilities table.
+
+For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
+
+## Icon
+
+The listing icon is available at [media/icon.svg](media/icon.svg). Upload it separately from the private plugin ZIP.
+
+## Previews
+
+Recorded on November 20, 2026 using public Nutanix data.
+
+| Security Advisories | Full | Half horizontal | Half vertical | Quadrant |
+| --- | --- | --- | --- | --- |
+| OG | ![Full](media/preview_full.webp) | ![Half horizontal](media/preview_half_horizontal.webp) | ![Half vertical](media/preview_half_vertical.webp) | ![Quadrant](media/preview_quadrant.webp) |
+| X | ![Full](media/preview_trmnl_x.webp) | ![Half horizontal](media/preview_trmnl_x_half_horizontal.webp) | ![Half vertical](media/preview_trmnl_x_half_vertical.webp) | ![Quadrant](media/preview_trmnl_x_quadrant.webp) |
+
+| NXVD | Full | Half horizontal | Half vertical | Quadrant |
+| --- | --- | --- | --- | --- |
+| OG | ![Full](media/preview_nxvd_full.webp) | ![Half horizontal](media/preview_nxvd_half_horizontal.webp) | ![Half vertical](media/preview_nxvd_half_vertical.webp) | ![Quadrant](media/preview_nxvd_quadrant.webp) |
+| X | ![Full](media/preview_nxvd_trmnl_x.webp) | ![Half horizontal](media/preview_nxvd_trmnl_x_half_horizontal.webp) | ![Half vertical](media/preview_nxvd_trmnl_x_half_vertical.webp) | ![Quadrant](media/preview_nxvd_trmnl_x_quadrant.webp) |
+
+## Templates
+
+[Shared Liquid](src/shared.liquid) renders both tables. [Full](src/full.liquid), [half horizontal](src/half_horizontal.liquid), [half vertical](src/half_vertical.liquid) and [quadrant](src/quadrant.liquid) select the columns and row capacity for each size.
+
+## Data behavior
+
+Each refresh makes one request to the selected Nutanix feed. Advisories uses a GET. NXVD uses a POST for the first page of up to 20 rows in descending CVSS order, with a product filter when selected. The NXVD count reflects the released rows in that page. Check deployed versions separately to determine which fixes a cluster has.
+
+The portal endpoints are undocumented and may change. Empty responses and source errors have separate messages. To diagnose a refresh failure, enable **Debug Logs** in the private plugin settings.
+
+## Checks
+
+With Node.js 22, Python 3 and Docker installed, run from the repository root:
+
+```sh
+node --test TRMNL/tests/transform.test.cjs
+./scripts/preview
+docker run --rm --volume "$PWD/TRMNL:/plugin" trmnl/trmnlp:v0.32.3 lint
+python3 scripts/package-import.py
+```
+
+The preview tests run the real transform against mocked Nutanix responses. They cover both tables, empty NXVD data and an HTTP error in all four layouts on OG and X. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`. The lint configuration exempts the existing custom table typography, line clamps and portrait rules.
+
+## Publish
+
+[Check plugin](../.github/workflows/check.yml) runs the tests, renders layouts, lints templates and builds the import ZIP. [Publish to TRMNL](../.github/workflows/publish.yml) runs these checks before publishing changes to `TRMNL/src/` on `main`. It can also be triggered manually.
+
+Set the `TRMNL_API_KEY` and `TRMNL_PLUGIN_SETTING_ID` repository secrets to enable publishing. The setting ID is the integer in the private plugin's edit URL (`/plugin_settings/<ID>/edit`).

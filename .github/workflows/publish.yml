@@ -1,0 +1,44 @@
+name: Publish to TRMNL
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'TRMNL/src/**'
+      - '.github/workflows/publish.yml'
+
+concurrency:
+  group: publish-trmnl
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
+  publish:
+    needs: check
+    name: Push plugin to TRMNL
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Push plugin via trmnlp
+        working-directory: TRMNL
+        env:
+          TRMNL_API_KEY: ${{ secrets.TRMNL_API_KEY }}
+          TRMNL_PLUGIN_SETTING_ID: ${{ secrets.TRMNL_PLUGIN_SETTING_ID }}
+        run: |
+          if [ -z "$TRMNL_API_KEY" ] || [ -z "$TRMNL_PLUGIN_SETTING_ID" ]; then
+            echo "::notice::Set TRMNL_API_KEY and TRMNL_PLUGIN_SETTING_ID to enable publishing."
+            test "$GITHUB_EVENT_NAME" != workflow_dispatch
+            exit
+          fi
+          docker run --rm \
+            --volume "$(pwd):/plugin" \
+            --env TRMNL_API_KEY \
+            trmnl/trmnlp:v0.32.3 push --force --id "$TRMNL_PLUGIN_SETTING_ID"
