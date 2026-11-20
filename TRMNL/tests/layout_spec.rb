@@ -45,6 +45,7 @@ RSpec.describe 'Nutanix Security layouts' do
         it "renders #{scenario} on #{device_name} #{view}" do
           fields = { table_type: mode, nxvd_product: 'aos' }
           screen = trmnl.render(view: view, device: device, custom_fields: fields, mocks: mocks)
+          narrow = %w[half_vertical quadrant].include?(view)
 
           expect(screen).to have_no_transform_error
           expect(screen).to have_text(label)
@@ -52,17 +53,17 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen.all('[data-ns-row]').size).to eq([limit, [count - 1, 0].max].min)
           expect(screen.result.requests.size).to eq(1)
-          expect(screen).to have_css('[data-ns-lead] .ns-subject', text: label) if count.positive?
+          expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
           if count.positive? && mode == 'nxvd'
             expect(screen).to have_text("#{count} on page")
-            expect(screen.find('.ns-score').text).to eq('9.8')
+            expect(screen.find('[data-ns-score]').text).to eq('9.8')
             expect(screen).to have_text('Fixed in')
           elsif count.positive?
             expect(screen).to have_text("SA #0006")
             expect(screen).to have_text('Nov 20, 2026')
             expect(screen).to have_no_text('Investigation and BreakFix Guidance for')
-            expect(screen).to have_text('1 published Nov 20')
+            expect(screen).to have_text(narrow ? '1 on Nov 20' : '1 published Nov 20')
           end
 
           request = screen.result.requests.first
@@ -75,7 +76,11 @@ RSpec.describe 'Nutanix Security layouts' do
 
           footer = screen.box('[data-ns-footer]')
           box = screen.box('.view')
-          expect(screen.evaluate("document.querySelector('.ns-mast').scrollWidth - document.querySelector('.ns-mast').clientWidth")).to be <= 1
+          width_overflow = screen.evaluate(<<~JS)
+            Math.max(...Array.from(document.querySelectorAll('[data-ns-mast], [data-ns-footer] .instance'),
+              element => element.scrollWidth - element.clientWidth))
+          JS
+          expect(width_overflow).to be <= 1
           bottom = footer.top + footer.height
           expect(bottom).to be <= box.top + box.height + 1
           if count.positive?

@@ -15,7 +15,7 @@
 
 {% template nutanix_severity %}
 {%- assign severity = value | default: 'Unrated' -%}
-<span class="ns-severity{% if severity == 'Critical' %} ns-severity--critical{% endif %}">{{ severity | escape }}</span>
+<span class="label label--small {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
 {% endtemplate %}
 
 {% template nutanix_table %}
@@ -35,317 +35,129 @@
 {% assign row_limit = 4 %}
 {% if view == 'half_horizontal' %}{% assign row_limit = 2 %}{% endif %}
 {% if view == 'quadrant' %}{% assign row_limit = 0 %}{% endif %}
-<style>
-  .ns { container-type:size; width:100%; height:100%; }
-  .ns, .ns * { box-sizing:border-box; }
-  .ns-board {
-    --u:min(.145cqw,.215cqh);
-    --pad:calc(16 * var(--u));
-    --rule:max(1px,calc(.75 * var(--u)));
-    width:100%;
-    height:100%;
-    display:grid;
-    grid-template-rows:auto minmax(0,1fr) auto;
-    border:var(--rule) solid #151515;
-    border-radius:calc(9 * var(--u));
-    overflow:hidden;
-    background:#fff;
-    color:#151515;
-    font-family:Arial, Helvetica, sans-serif;
-  }
-  .ns--half_horizontal .ns-board { --u:min(.145cqw,.43cqh); }
-  .ns--half_vertical .ns-board { --u:min(.29cqw,.215cqh); }
-  .ns--quadrant .ns-board { --u:min(.29cqw,.43cqh); }
-  .ns-mast {
-    display:flex;
-    align-items:center;
-    gap:calc(11 * var(--u));
-    padding:calc(9 * var(--u)) var(--pad) calc(10 * var(--u));
-    background:#151515;
-    color:#fff;
-  }
-  .ns-mark {
-    width:calc(33 * var(--u));
-    height:calc(33 * var(--u));
-    flex:none;
-    fill:currentColor;
-  }
-  .ns-brand {
-    font-size:calc(12 * var(--u));
-    font-weight:700;
-    letter-spacing:.15em;
-    line-height:1.05;
-  }
-  .ns-heading {
-    margin:calc(3 * var(--u)) 0 0;
-    font-size:calc(25 * var(--u));
-    font-weight:750;
-    line-height:1.05;
-  }
-  .ns-scope {
-    flex:none;
-    margin-inline-start:auto;
-    font-size:calc(14 * var(--u));
-    font-weight:700;
-    font-variant-numeric:tabular-nums;
-    text-align:right;
-  }
-  .ns-content { min-height:0; display:flex; flex-direction:column; }
-  .ns-feature {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:center;
-    gap:calc(18 * var(--u));
-    padding:calc(15 * var(--u)) var(--pad);
-  }
-  .ns-meta {
-    display:flex;
-    align-items:baseline;
-    gap:calc(7 * var(--u));
-    flex-wrap:wrap;
-    font-size:calc(14 * var(--u));
-    font-weight:700;
-    line-height:1.2;
-  }
-  .ns-meta-label { text-transform:uppercase; letter-spacing:.08em; }
-  .ns-meta a, .ns-foot a { color:inherit; text-decoration:underline; text-underline-offset:.14em; }
-  .ns-clip {
-    display:-webkit-box;
-    -webkit-box-orient:vertical;
-    -webkit-line-clamp:var(--lines,1);
-    overflow:hidden;
-    overflow-wrap:anywhere;
-  }
-  .ns-subject {
-    --lines:2;
-    margin:calc(4 * var(--u)) 0;
-    font-size:calc(36 * var(--u));
-    font-weight:800;
-    letter-spacing:-.04em;
-    line-height:1.05;
-  }
-  .ns-detail { font-size:calc(16 * var(--u)); line-height:1.25; }
-  .ns-impact {
-    display:grid;
-    justify-items:end;
-    gap:calc(4 * var(--u));
-    text-align:right;
-  }
-  .ns-score {
-    font-size:calc(58 * var(--u));
-    font-weight:800;
-    letter-spacing:-.075em;
-    font-variant-numeric:tabular-nums;
-    line-height:.95;
-  }
-  .ns-score-label { font-size:calc(12 * var(--u)); font-weight:700; letter-spacing:.14em; }
-  .ns-severity {
-    display:inline-block;
-    max-width:100%;
-    padding:calc(3 * var(--u)) calc(7 * var(--u));
-    border:var(--rule) solid #151515;
-    border-radius:calc(4 * var(--u));
-    font-size:calc(14 * var(--u));
-    font-weight:700;
-    line-height:1;
-  }
-  .ns-severity--critical { color:#fff; background:#151515; }
-  .ns-digest { min-width:0; margin:0 var(--pad); border-top:calc(2 * var(--rule)) solid #151515; }
-  .ns-digest-title {
-    margin:calc(7 * var(--u)) 0 0;
-    font-size:calc(12 * var(--u));
-    font-weight:700;
-    letter-spacing:.13em;
-    text-transform:uppercase;
-  }
-  .ns-list { list-style:none; margin:0; padding:0; }
-  .ns-row {
-    display:grid;
-    grid-template-columns:minmax(0,1fr) auto;
-    align-items:center;
-    gap:calc(8 * var(--u));
-    min-height:calc(48 * var(--u));
-    padding:calc(5 * var(--u)) 0;
-  }
-  .ns-row + .ns-row { border-top:var(--rule) solid #151515; }
-  .ns--full .ns-digest { flex:1; display:flex; flex-direction:column; }
-  .ns--full .ns-list { flex:1; display:flex; flex-direction:column; }
-  .ns--full .ns-row { flex:1; max-height:calc(64 * var(--u)); }
-  .ns-row-title { font-size:calc(18 * var(--u)); font-weight:700; line-height:1.12; }
-  .ns-row-detail { margin-top:calc(2 * var(--u)); font-size:calc(14 * var(--u)); line-height:1.15; }
-  .ns-row-right { display:flex; align-items:center; gap:calc(6 * var(--u)); }
-  .ns-row-score { font-size:calc(16 * var(--u)); font-weight:700; font-variant-numeric:tabular-nums; }
-  .ns-foot {
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:space-between;
-    gap:calc(5 * var(--u));
-    padding:calc(6 * var(--u)) var(--pad);
-    border-top:var(--rule) solid #151515;
-    font-size:calc(13 * var(--u));
-    line-height:1.15;
-  }
-  .ns-empty {
-    display:grid;
-    align-content:center;
-    justify-items:start;
-    height:100%;
-    padding:var(--pad);
-  }
-  .ns-empty .ns-subject { font-size:calc(29 * var(--u)); }
-  .ns--half_horizontal .ns-content {
-    display:grid;
-    grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);
-    align-items:center;
-  }
-  .ns--half_horizontal .ns-content--notice,
-  .ns--half_horizontal .ns-content--single { grid-template-columns:minmax(0,1fr); }
-  .ns--half_horizontal .ns-digest {
-    margin:0 var(--pad) 0 0;
-    border-top:0;
-    border-inline-start:var(--rule) solid #151515;
-    padding-inline-start:calc(12 * var(--u));
-  }
-  .ns--half_horizontal .ns-feature { gap:calc(10 * var(--u)); }
-  .ns--half_horizontal .ns-subject { font-size:calc(30 * var(--u)); }
-  .ns--half_horizontal .ns-score { font-size:calc(44 * var(--u)); }
-  .ns--half_horizontal .ns-row { min-height:calc(44 * var(--u)); }
-  .ns--half_horizontal .ns-row-score { display:none; }
-  .ns--half_vertical .ns-heading, .ns--quadrant .ns-heading { font-size:calc(21 * var(--u)); }
-  .ns--half_vertical .ns-mast, .ns--quadrant .ns-mast { gap:calc(8 * var(--u)); }
-  .ns--half_vertical .ns-mark, .ns--quadrant .ns-mark { width:calc(27 * var(--u)); height:calc(27 * var(--u)); }
-  .ns--half_vertical .ns-scope, .ns--quadrant .ns-scope { font-size:calc(12 * var(--u)); max-width:calc(66 * var(--u)); }
-  .ns--half_vertical .ns-subject, .ns--quadrant .ns-subject { font-size:calc(27 * var(--u)); }
-  .ns--half_vertical .ns-score, .ns--quadrant .ns-score { font-size:calc(42 * var(--u)); }
-  .ns--half_vertical .ns-feature, .ns--quadrant .ns-feature { gap:calc(9 * var(--u)); }
-  .ns--quadrant .ns-content { justify-content:center; }
-  .ns--quadrant .ns-feature { padding-block:calc(8 * var(--u)); }
-  @container (max-aspect-ratio: 5/2) {
-    .ns--half_horizontal .ns-content { grid-template-columns:minmax(0,1fr); }
-    .ns--half_horizontal .ns-digest {
-      margin:0 var(--pad);
-      border-top:var(--rule) solid #151515;
-      border-inline-start:0;
-      padding-inline-start:0;
-    }
-  }
-</style>
+{% assign split = false %}
+{% if view == 'half_horizontal' and record_count > 1 %}{% assign split = true %}{% endif %}
+{% assign narrow = false %}
+{% if view == 'quadrant' or view == 'half_vertical' %}{% assign narrow = true %}{% endif %}
 
-<div class="layout layout--stretch">
-  <section class="ns ns--{{ view }}" aria-label="Nutanix {{ heading }}">
-    <div class="ns-board">
-      <header class="ns-mast">
-        <svg viewBox="0 0 256 256" class="ns-mark" aria-hidden="true">
-          <path fill-rule="evenodd" d="
-            M27 27H90L128 65L166 27H229V90L191 128L229 166V229H166L128 191L90 229H27V166L65 128L27 90Z
-            M35 35H86L128 77L170 35H221V86L179 128L221 170V221H170L128 179L86 221H35V170L77 128L35 86Z"/>
-        </svg>
-        <div>
-          <div class="ns-brand">NUTANIX{% if is_nxvd %} · NXVD{% endif %}</div>
-          <h1 class="ns-heading">{{ heading }}</h1>
-        </div>
-        <div class="ns-scope">
+<div class="layout layout--col layout--stretch gap--none">
+  <section class="flex flex--col w--full h--full gap--none" aria-label="Nutanix {{ heading }}">
+    <header class="flex flex--row flex--center-y w--full inverse rounded py--2 {% if narrow %}gap--xsmall px--2{% else %}gap--small px--3{% endif %}" data-ns-mast>
+      <svg viewBox="0 0 256 256" class="w--7 h--7 lg:w--9 lg:h--9 no-shrink {% if narrow %}portrait:w--5 portrait:h--5{% endif %}" aria-hidden="true">
+        <path fill="currentColor" fill-rule="evenodd" d="
+          M27 27H90L128 65L166 27H229V90L191 128L229 166V229H166L128 191L90 229H27V166L65 128L27 90Z
+          M35 35H86L128 77L170 35H221V86L179 128L221 170V221H170L128 179L86 221H35V170L77 128L35 86Z"/>
+      </svg>
+      <div class="grow w--min-0">
+        <div class="label label--small text--bold">NUTANIX{% if is_nxvd %} · NXVD{% endif %}</div>
+        <div class="title title--base text--bold {% if narrow %}portrait:title--small lg:portrait:title--base{% else %}lg:title--large{% endif %}" role="heading" aria-level="1">{{ heading }}</div>
+      </div>
+      {% if feed_state == 'ERROR' or lead %}
+        <div class="label label--small text--bold text--right no-shrink {% if narrow %}portrait:w--max-14{% endif %}">
           {% if feed_state == 'ERROR' %}Source error
-          {% elsif lead %}{{ record_count }} {% if is_nxvd %}on page{% else %}published{% endif %}
-          {% endif %}
-        </div>
-      </header>
-
-      {% if feed_state == 'ERROR' or lead == blank %}
-        <div class="ns-content ns-content--notice">
-          <div class="ns-empty">
-            {% if feed_state == 'ERROR' %}
-              <div class="ns-meta">{{ source_error | default: 'Source error' | escape }}</div>
-              <h2 class="ns-subject">Nutanix feed unavailable</h2>
-              <div class="ns-detail">{{ source_message | default: 'Check the plugin Debug Logs.' | escape }}</div>
-            {% elsif is_nxvd %}
-              <h2 class="ns-subject">No released fixes on this page</h2>
-              <div class="ns-detail">Check the selected product in NXVD.</div>
-            {% else %}
-              <h2 class="ns-subject">No advisories returned</h2>
-              <div class="ns-detail">Check the Nutanix advisory feed.</div>
-            {% endif %}
-          </div>
-        </div>
-      {% else %}
-        <div class="ns-content{% if record_count == 1 %} ns-content--single{% endif %}">
-          <article class="ns-feature" data-ns-lead>
-            <div>
-              <div class="ns-meta">
-                {% if is_nxvd %}
-                  <span class="ns-meta-label">By CVSS</span>
-                  {% if lead.cesa != blank %}<span>{{ lead.cesa | escape }}</span>{% endif %}
-                {% else %}
-                  <span class="ns-meta-label">Latest advisory</span>
-                  {% if lead.date != blank %}<time>{{ lead.date | escape }}</time>{% endif %}
-                  {% if lead.href contains 'https://download.nutanix.com/alerts/' %}
-                    <a href="{{ lead.href | escape }}" title="Download advisory PDF">SA #{{ lead.advisoryNumber | escape }}</a>
-                  {% else %}
-                    <span>SA #{{ lead.advisoryNumber | escape }}</span>
-                  {% endif %}
-                {% endif %}
-              </div>
-              <h2 class="ns-subject ns-clip">{% render "nutanix_subject", entry: lead, mode: current_mode %}</h2>
-              {% if is_nxvd %}
-                <div class="ns-detail ns-clip">{{ lead.product | escape }}{% if lead.package != blank %} · {{ lead.package | escape }}{% endif %}</div>
-                {% if lead.fixed != blank %}<div class="ns-detail ns-clip"><strong>Fixed in</strong> {{ lead.fixed | escape }}</div>{% endif %}
-              {% elsif lead.affectedVersions != blank %}
-                <div class="ns-detail ns-clip"><strong>Affects</strong> {{ lead.affectedVersions | escape }}</div>
-              {% endif %}
-            </div>
-            <div class="ns-impact">
-              {% if is_nxvd %}
-                {% if lead.cvss != blank %}<div class="ns-score">{{ lead.cvss | escape }}</div><div class="ns-score-label">CVSS</div>{% endif %}
-                {% render "nutanix_severity", value: lead.severity %}
-              {% else %}
-                {% render "nutanix_severity", value: lead.criticality %}
-              {% endif %}
-            </div>
-          </article>
-
-          {% if row_limit > 0 and record_count > 1 %}
-            <section class="ns-digest">
-              <h2 class="ns-digest-title">{% if is_nxvd %}More released fixes{% else %}Earlier advisories{% endif %}</h2>
-              <ul class="ns-list">
-                {% for entry in records offset: 1 limit: row_limit %}
-                  <li class="ns-row" data-ns-row>
-                    <div>
-                      <div class="ns-row-title ns-clip">{% render "nutanix_subject", entry: entry, mode: current_mode %}</div>
-                      <div class="ns-row-detail ns-clip">
-                        {% if is_nxvd %}
-                          <strong>{{ entry.product | escape }}</strong>{% if entry.package != blank %} · {{ entry.package | escape }}{% endif %}
-                          {% if entry.fixed != blank %} · Fixed in {{ entry.fixed | escape }}{% endif %}
-                        {% else %}
-                          SA #{{ entry.advisoryNumber | escape }}{% if entry.date != blank %} · {{ entry.date | escape }}{% endif %}
-                        {% endif %}
-                      </div>
-                    </div>
-                    <div class="ns-row-right">
-                      {% if is_nxvd %}
-                        {% if entry.cvss != blank %}<span class="ns-row-score">{{ entry.cvss | escape }}</span>{% endif %}
-                        {% render "nutanix_severity", value: entry.severity %}
-                      {% else %}
-                        {% render "nutanix_severity", value: entry.criticality %}
-                      {% endif %}
-                    </div>
-                  </li>
-                {% endfor %}
-              </ul>
-            </section>
+          {% else %}{{ record_count }} {% if is_nxvd %}on page{% else %}published{% endif %}
           {% endif %}
         </div>
       {% endif %}
+    </header>
 
-      <footer class="ns-foot" data-ns-footer>
-        {% if is_nxvd %}
-          <span>Verify deployed versions</span>
-        {% elsif lead.date != blank and feed_state != 'ERROR' %}
-          {% assign latest_count = records | where: 'date', lead.date | size %}
-          <span>{{ latest_count }} published {{ lead.date | date: '%b %-d' | escape }}</span>
+    {% if feed_state == 'ERROR' or lead == blank %}
+      <div class="flex flex--col flex--center-y gap--xsmall grow w--full px--3">
+        {% if feed_state == 'ERROR' %}
+          <div class="label label--outline">{{ source_error | default: 'Source error' | escape }}</div>
+          <div class="title text--center">Nutanix feed unavailable</div>
+          <div class="description text--center">{{ source_message | default: 'Check the plugin Debug Logs.' | escape }}</div>
+        {% elsif is_nxvd %}
+          <div class="title text--center">No released fixes on this page</div>
+          <div class="description text--center">Check the selected product in NXVD.</div>
+        {% else %}
+          <div class="title text--center">No advisories returned</div>
+          <div class="description text--center">Check the Nutanix advisory feed.</div>
         {% endif %}
-        <a href="{{ site_url }}">Nutanix Support</a>
-      </footer>
-    </div>
+      </div>
+    {% else %}
+      <div class="w--full grow px--3 py--2 {% if split %}grid grid--cols-5 portrait:grid--cols-1 gap--medium{% else %}flex flex--col gap--small{% if view == 'quadrant' or record_count == 1 %} flex--center-y{% endif %}{% endif %}">
+        <article class="flex flex--row flex--center-y flex--between gap--small w--full {% if split %}col--span-3 portrait:col--span-1 self--center{% endif %} {% if narrow %}portrait:flex--col portrait:flex--left{% endif %}" data-ns-lead>
+          <div class="grow w--min-0 {% if narrow %}portrait:w--full{% endif %}">
+            <div class="flex flex--row flex--left flex--wrap gap--xsmall">
+              {% if is_nxvd %}
+                <span class="label label--small text--bold">BY CVSS</span>
+                {% if lead.cesa != blank %}<span class="label label--small">{{ lead.cesa | escape }}</span>{% endif %}
+              {% else %}
+                <span class="label label--small text--bold">LATEST ADVISORY</span>
+                {% if lead.date != blank %}<time class="label label--small">{{ lead.date | escape }}</time>{% endif %}
+                {% if lead.href contains 'https://download.nutanix.com/alerts/' %}
+                  <a class="label label--small label--underline" href="{{ lead.href | escape }}" title="Download advisory PDF">SA #{{ lead.advisoryNumber | escape }}</a>
+                {% else %}
+                  <span class="label label--small">SA #{{ lead.advisoryNumber | escape }}</span>
+                {% endif %}
+              {% endif %}
+            </div>
+            <div class="title text--bold {% if view == 'full' %}title--large lg:title--xxlarge{% else %}title--base lg:title--large{% endif %} my--1" data-ns-subject data-clamp="2" role="heading" aria-level="2">{% render "nutanix_subject", entry: lead, mode: current_mode %}</div>
+            {% if is_nxvd %}
+              <div class="description description--large" data-clamp="1">{{ lead.product | escape }}{% if lead.package != blank %} · {{ lead.package | escape }}{% endif %}</div>
+              {% if lead.fixed != blank %}<div class="description description--large" data-clamp="1"><strong>Fixed in</strong> {{ lead.fixed | escape }}</div>{% endif %}
+            {% elsif lead.affectedVersions != blank %}
+              <div class="description description--large" data-clamp="1"><strong>Affects</strong> {{ lead.affectedVersions | escape }}</div>
+            {% endif %}
+          </div>
+          <div class="flex flex--col no-shrink gap--none flex--right text--right {% if narrow %}portrait:flex--row portrait:gap--xsmall portrait:flex--center-y{% endif %}">
+            {% if is_nxvd %}
+              {% if lead.cvss != blank %}
+                <div class="value value--tnums text--bold {% if view == 'full' %}value--large lg:value--xlarge{% else %}value--base lg:value--large{% endif %}" data-ns-score>{{ lead.cvss | escape }}</div>
+                <span class="label label--small text--bold">CVSS</span>
+              {% endif %}
+              {% render "nutanix_severity", value: lead.severity %}
+            {% else %}
+              {% render "nutanix_severity", value: lead.criticality %}
+            {% endif %}
+          </div>
+        </article>
+
+        {% if row_limit > 0 and record_count > 1 %}
+          <section class="flex flex--col w--full gap--none {% if split %}col--span-2 portrait:col--span-1 self--center{% else %}grow{% endif %}">
+            <div class="bg--black h--[2px] w--full {% if split %}landscape:hidden{% endif %}"></div>
+            <div class="label label--small text--bold w--full {% unless split %}pt--1{% endunless %}" role="heading" aria-level="2">{% if is_nxvd %}MORE RELEASED FIXES{% else %}EARLIER ADVISORIES{% endif %}</div>
+            <div class="flex flex--col w--full gap--none {% if view == 'full' %}grow{% endif %}" role="list">
+              {% for entry in records offset: 1 limit: row_limit %}
+                {% unless forloop.first %}<div class="divider divider--h w--full" aria-hidden="true"></div>{% endunless %}
+                <div class="flex flex--row flex--center-y flex--between gap--xsmall w--full py--1 {% if view == 'full' %}grow h--max-16 lg:h--max-28{% endif %}" role="listitem" data-ns-row>
+                  <div class="grow w--min-0">
+                    <div class="title title--small lg:title--base text--bold" data-clamp="1">{% render "nutanix_subject", entry: entry, mode: current_mode %}</div>
+                    <div class="description" data-clamp="1">
+                      {% if is_nxvd %}
+                        <strong>{{ entry.product | escape }}</strong>{% if entry.package != blank %} · {{ entry.package | escape }}{% endif %}
+                        {% if entry.fixed != blank %} · Fixed in {{ entry.fixed | escape }}{% endif %}
+                      {% else %}
+                        SA #{{ entry.advisoryNumber | escape }}{% if entry.date != blank %} · {{ entry.date | escape }}{% endif %}
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="flex flex--row flex--center-y gap--xsmall no-shrink">
+                    {% if is_nxvd %}
+                      {% if entry.cvss != blank and view != 'half_horizontal' %}<span class="label label--small text--bold">{{ entry.cvss | escape }}</span>{% endif %}
+                      {% render "nutanix_severity", value: entry.severity %}
+                    {% else %}
+                      {% render "nutanix_severity", value: entry.criticality %}
+                    {% endif %}
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </section>
+        {% endif %}
+      </div>
+    {% endif %}
   </section>
+</div>
+
+<div class="title_bar bg--white" data-ns-footer>
+  <span class="title"><a href="{{ site_url }}">{% unless narrow %}Nutanix {% endunless %}Support</a></span>
+  {% if is_nxvd %}
+    <span class="instance">{% if narrow %}Check versions{% else %}Verify deployed versions{% endif %}</span>
+  {% elsif lead.date != blank and feed_state != 'ERROR' %}
+    {% assign latest_count = records | where: 'date', lead.date | size %}
+    <span class="instance">{{ latest_count }} {% if narrow %}on{% else %}published{% endif %} {{ lead.date | date: '%b %-d' | escape }}</span>
+  {% endif %}
 </div>
 {% endtemplate %}

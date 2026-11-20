@@ -53,7 +53,7 @@ docker run --rm --volume "$PWD/TRMNL:/plugin" trmnl/trmnlp:v0.32.3 lint
 python3 scripts/package-import.py
 ```
 
-The preview tests run the real transform against mocked Nutanix responses. They cover both briefs, empty data and an HTTP error in all four layouts on OG and X in landscape and portrait. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`. The lint configuration exempts the brief's custom typography and line clamps.
+The preview tests run the real transform against mocked Nutanix responses. They cover both briefs, empty data and an HTTP error in all four layouts on OG and X in landscape and portrait. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`.
 
 ## Publish
 
