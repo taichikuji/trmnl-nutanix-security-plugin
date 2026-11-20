@@ -32,7 +32,7 @@ Recorded on November 20, 2026 using public Nutanix data.
 
 ## Templates
 
-[Shared Liquid](src/shared.liquid) renders both tables. [Full](src/full.liquid), [half horizontal](src/half_horizontal.liquid), [half vertical](src/half_vertical.liquid) and [quadrant](src/quadrant.liquid) select the columns and row capacity for each size.
+[Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication and shows how many advisories share its date. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available. The four templates choose how many additional items fit beside or below the lead.
 
 ## Data behavior
 
@@ -53,7 +53,7 @@ docker run --rm --volume "$PWD/TRMNL:/plugin" trmnl/trmnlp:v0.32.3 lint
 python3 scripts/package-import.py
 ```
 
-The preview tests run the real transform against mocked Nutanix responses. They cover both tables, empty NXVD data and an HTTP error in all four layouts on OG and X. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`. The lint configuration exempts the existing custom table typography, line clamps and portrait rules.
+The preview tests run the real transform against mocked Nutanix responses. They cover both briefs, empty data and an HTTP error in all four layouts on OG and X in landscape and portrait. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`. The lint configuration exempts the brief's custom typography and line clamps.
 
 ## Publish
 

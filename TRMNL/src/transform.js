@@ -35,17 +35,20 @@ function listText(value) {
 }
 
 function advisoryData(entries) {
+  const body = entries.map((entry) => ({
+    advisoryNumber: text(entry.advisoryNumber),
+    criticality: text(entry.criticality),
+    date: text(entry.date),
+    affectedVersions: text(entry.affectedVersions),
+    summary: text(entry.summary),
+    href: publicPdf(entry.href),
+  }));
+  // The layout reverses publication order to feature the most recent advisory.
+  body.sort((left, right) => (Date.parse(left.date) || 0) - (Date.parse(right.date) || 0));
   return {
     mode: 'advisories',
     feed_state: entries.length ? 'LIVE' : 'EMPTY',
-    content: { body: entries.map((entry) => ({
-      advisoryNumber: text(entry.advisoryNumber),
-      criticality: text(entry.criticality),
-      date: text(entry.date),
-      affectedVersions: text(entry.affectedVersions),
-      summary: text(entry.summary),
-      href: publicPdf(entry.href),
-    })) },
+    content: { body },
   };
 }
 

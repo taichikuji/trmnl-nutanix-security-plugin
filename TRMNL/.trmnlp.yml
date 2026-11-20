@@ -7,6 +7,6 @@ custom_fields:
   table_type: advisories
   nxvd_product: all
 
-# Preserve the existing table typography, line clamps and portrait rules.
+# The brief scales typography and line clamps to the layout.
 ignored_lint_rules:
   - no_style_restyling_framework
