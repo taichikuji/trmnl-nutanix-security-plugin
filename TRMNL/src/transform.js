@@ -16,11 +16,6 @@ function text(value) {
   return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
 }
 
-function publicPdf(value) {
-  const url = text(value);
-  return /^https:\/\/download\.nutanix\.com\/alerts\/Security_Advisory_[a-zA-Z0-9_.-]+\.pdf(?:\?[^\s]*)?$/i.test(url) ? url : '';
-}
-
 function listText(value) {
   if (typeof value === 'string') {
     const list = value.trim();
@@ -35,16 +30,16 @@ function listText(value) {
 }
 
 function advisoryData(entries) {
-  const body = entries.map((entry) => ({
+  // The layout reverses publication order and only the featured item shows affected versions.
+  const sorted = [...entries].sort((left, right) =>
+    (Date.parse(text(left.date)) || 0) - (Date.parse(text(right.date)) || 0));
+  const body = sorted.map((entry, index) => ({
     advisoryNumber: text(entry.advisoryNumber),
     criticality: text(entry.criticality),
     date: text(entry.date),
-    affectedVersions: text(entry.affectedVersions),
     summary: text(entry.summary),
-    href: publicPdf(entry.href),
+    ...(index === sorted.length - 1 ? { affectedVersions: text(entry.affectedVersions) } : {}),
   }));
-  // The layout reverses publication order to feature the most recent advisory.
-  body.sort((left, right) => (Date.parse(left.date) || 0) - (Date.parse(right.date) || 0));
   return {
     mode: 'advisories',
     feed_state: entries.length ? 'LIVE' : 'EMPTY',

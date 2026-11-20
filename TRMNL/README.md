@@ -49,7 +49,7 @@ The sample NXVD page supplied 15 fixes. The full landscape X regression shows al
 
 ## Data behavior
 
-Each refresh makes one request to the selected Nutanix feed. Advisories uses a GET and displays publication dates. NXVD uses a POST for the first page in descending CVSS order, with a product filter when selected. Nutanix can return fewer than the requested 20 rows, and the counts on screen cover only released fixes in that page. Check deployed versions separately to determine which fixes a cluster has.
+Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. Serverless keeps only the fields used on screen. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested, and the counts on screen cover only released fixes in that page. TRMNL fits table rows when it renders each layout from the refreshed data. Check deployed versions separately to determine which fixes a cluster has.
 
 The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
 

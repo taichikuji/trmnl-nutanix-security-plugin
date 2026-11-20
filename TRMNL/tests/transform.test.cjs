@@ -55,10 +55,10 @@ function nxvd(rows, counts = rows.length) {
   return json({ vulnerabilities: rows, totalCount: counts, pageCount: counts });
 }
 
-test('Advisories default to one GET and preserve the validated table fields', async () => {
+test('Advisories default to one GET and keep only fields used by the table or featured advisory', async () => {
   const entries = [
+    { ...advisory, advisoryNumber: 62, date: 'November 19, 2026', affectedVersions: 'AHV', href: 'https://private.example/2' },
     { ...advisory, docUrl: 'https://private.example/1' },
-    { ...advisory, advisoryNumber: 62, href: 'https://private.example/2' },
   ];
   const { request, data } = await refresh(undefined, json({ content: { body: entries } }));
   assert.equal(request.url, advisoryUrl);
@@ -67,8 +67,8 @@ test('Advisories default to one GET and preserve the validated table fields', as
   assert.deepEqual(data, {
     mode: 'advisories', feed_state: 'LIVE',
     content: { body: [
-      { ...advisory, advisoryNumber: '61' },
-      { ...advisory, advisoryNumber: '62', href: '' },
+      { advisoryNumber: '61', criticality: 'High', date: 'November 18, 2026', summary: 'Security update available' },
+      { advisoryNumber: '62', criticality: 'High', date: 'November 19, 2026', summary: 'Security update available', affectedVersions: 'AHV' },
     ] },
   });
 });
