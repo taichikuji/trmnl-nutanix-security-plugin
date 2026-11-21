@@ -2,13 +2,13 @@
 
 ## Setup
 
-From the repository root, build the private plugin ZIP:
+From the repository root, build the private plugin ZIP.
 
 ```sh
 python3 scripts/package-import.py
 ```
 
-On the [Private Plugins page](https://trmnl.com/plugin_settings?keyname=private_plugin), select **Import new** and upload `dist/trmnl-nutanix-sec-plugin.zip`. Choose **Table to display** in the plugin settings. Use **Advisory order** for Security Advisories or **Product (NXVD)** for the vulnerabilities table.
+The local build writes `dist/trmnl-nutanix-sec-plugin.zip`. Open Private Plugins, select **Import new**, and upload the ZIP. Use **Advisory order** for Security Advisories or **Product (NXVD)** for the vulnerabilities table. [Private Plugins](https://trmnl.com/plugin_settings?keyname=private_plugin)
 
 For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
 
@@ -47,6 +47,8 @@ The templates cap the number of rows before rendering. Framework 3.4.6 handles t
 
 ## Data behavior
 
+TRMNL's Polling strategy schedules refreshes. The Polling URL stays empty so Serverless can choose both the URL and HTTP method. TRMNL's Polling Verb setting applies one method to all configured URLs. [Dynamic Polling URLs](https://help.trmnl.com/en/articles/12689499-dynamic-polling-urls)
+
 Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 11 ranked items to TRMNL for the largest layout and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
 
 The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
@@ -64,10 +66,10 @@ docker run --rm --volume "$PWD/TRMNL:/plugin" trmnl/trmnlp:v0.32.3 lint
 python3 scripts/package-import.py
 ```
 
-The preview tests run the real transform against mocked Nutanix responses. They cover both briefs, empty data and an HTTP error in all four layouts on OG and X in landscape and portrait. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`.
+Locally, the preview script runs one CPU- and memory-limited container. The tests run the real transform against mocked Nutanix responses and cover both briefs, empty data, and an HTTP error in all four layouts on OG and X in landscape and portrait. Screenshots are written to `TRMNL/_build/previews/` and the HTML report is at `TRMNL/_build/report/index.html`.
 
 ## Publish
 
-[Check plugin](../.github/workflows/check.yml) runs the tests, renders layouts, lints templates and builds the import ZIP. [Publish to TRMNL](../.github/workflows/publish.yml) runs these checks before publishing changes to `TRMNL/src/` on `main`. It can also be triggered manually.
+[Check plugin](../.github/workflows/check.yml) runs the tests, renders layouts and lints templates. [Publish to TRMNL](../.github/workflows/publish.yml) runs these checks before publishing changes to `TRMNL/src/` on `main`. It can also be triggered manually.
 
 Set the `TRMNL_API_KEY` and `TRMNL_PLUGIN_SETTING_ID` repository secrets to enable publishing. The setting ID is the integer in the private plugin's edit URL (`/plugin_settings/<ID>/edit`).

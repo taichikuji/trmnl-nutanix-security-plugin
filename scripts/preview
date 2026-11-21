@@ -1,6 +1,10 @@
 #!/bin/sh
 set -eu
 cd "$(dirname "$0")/.."
-docker run --rm --init --shm-size=512m \
+set -- --shm-size=512m
+if [ "${GITHUB_ACTIONS:-}" != true ]; then
+  set -- --cpus=0.75 --memory=896m --memory-swap=896m --pids-limit=256 --shm-size=256m
+fi
+docker run --rm --init "$@" \
   --volume "$PWD/TRMNL:/plugin" \
   trmnl/trmnlp:v0.32.3 test tests/layout_spec.rb --report _build/report

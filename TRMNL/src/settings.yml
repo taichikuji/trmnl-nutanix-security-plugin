@@ -1,7 +1,7 @@
 ---
 name: Nutanix Security
 # Short descriptions for TRMNL's private plugin editor.
-description: Nutanix security tables
+description: Advisories and vulnerability fixes
 icon: media/icon.svg
 strategy: polling
 # Polling without a URL allows Serverless to perform exactly one selected API request.
@@ -26,6 +26,9 @@ custom_fields:
       - when: advisories
         visible:
           - advisory_sort
+      - when: nxvd
+        visible:
+          - nxvd_product
   - keyname: advisory_sort
     name: Advisory order
     field_type: select
@@ -47,10 +50,15 @@ custom_fields:
       - 'WitnessVM': witnessvm
       - 'Witness Service': witness_service
     default: all
-    description: Only used in NXVD mode
+    optional: true
   - keyname: author_bio
     name: About This Plugin
     field_type: author_bio
     category: programming,news
-    description: Independent Nutanix viewer
-    learn_more_url: https://portal.nutanix.com/page/security/security-vulnerabilities/list
+    description: >-
+      Read the latest Nutanix Security Advisories or review released fixes from the
+      Nutanix Vulnerability Database. Sort advisories by publication date or
+      criticality, or filter fixes by product. This independent plugin uses public
+      Nutanix data and refreshes every six hours by default.
+    github_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin
+    learn_more_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin/blob/main/TRMNL/README.md#setup

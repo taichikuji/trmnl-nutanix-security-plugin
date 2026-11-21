@@ -19,8 +19,8 @@ files['settings.yml'] = ''.join(
 
 output = pathlib.Path(sys.argv[1]) if len(sys.argv) > 1 else root / 'dist/trmnl-nutanix-sec-plugin.zip'
 output.parent.mkdir(parents=True, exist_ok=True)
-with zipfile.ZipFile(output, 'w', zipfile.ZIP_DEFLATED) as archive:
+with zipfile.ZipFile(output, 'w') as archive:
     for name, content in files.items():
-        archive.writestr(name, content)
+        archive.writestr(zipfile.ZipInfo(name), content, compress_type=zipfile.ZIP_DEFLATED)
 
 print(f'Created {output} with {len(files)} plugin files.')
