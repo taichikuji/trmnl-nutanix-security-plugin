@@ -72,21 +72,20 @@
     overflow: hidden;
     overflow-wrap: anywhere;
   }
-  .screen--lg:not(.screen--portrait) .view--full .nutanix-headline { max-block-size: 3lh; }
 </style>
 
 <div class="layout layout--col layout--stretch gap--none">
-  <section class="flex flex--col h--full w--full gap--small lg:gap--medium" aria-label="Nutanix {{ heading }}">
-    <header class="inverse flex flex--row flex--left flex--center-y gap--small w--full px--3 no-shrink" data-ns-mast>
+  <section class="flex flex--col h--full w--full gap--small" aria-label="Nutanix {{ heading }}">
+    <header class="flex flex--row flex--left flex--center-y gap--small w--full px--3 no-shrink" data-ns-mast>
       <svg viewBox="0 0 256 256" class="w--8 h--8 lg:w--10 lg:h--10 no-shrink" aria-hidden="true">
         <path fill="currentColor" fill-rule="evenodd" d="M27 27H90L128 65L166 27H229V90L191 128L229 166V229H166L128 191L90 229H27V166L65 128L27 90Z M35 35H86L128 77L170 35H221V86L179 128L221 170V221H170L128 179L86 221H35V170L77 128L35 86Z"/>
       </svg>
-      <div class="grow w--min-0 py--2">
-        <div class="label label--base text--bold">NUTANIX{% if current_mode == 'nxvd' %} · NXVD{% endif %}</div>
-        <div class="title title--small md:landscape:title--base lg:title--large" role="heading" aria-level="1">{{ heading }}</div>
+      <div class="grow w--min-0 py--1">
+        <div class="label label--base text--bold">NUTANIX</div>
+        <div class="title title--base lg:title--large text--bold" role="heading" aria-level="1">{{ heading }}</div>
       </div>
-      {% if portal_url != blank %}
-        <div class="flex flex--col w--16 my--0.5 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
+      {% if portal_url != blank and view == 'full' %}
+        <div class="hidden lg:flex flex--col w--12 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
           {{ portal_url | qr_code: 2, 'l' }}
         </div>
       {% endif %}
@@ -107,51 +106,46 @@
         {% endif %}
       </div>
     {% else %}
-      <div class="flex flex--col w--full gap--small h--min-0 {% if records.size > 1 %}{% if view == 'full' %}lg:landscape:grid lg:landscape:grid--cols-6 lg:landscape:gap--medium{% elsif view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}{% endif %}">
-        <article class="flex flex--col flex--left gap--none p--3 lg:p--4 w--full w--min-0 self--start {% if view == 'full' %}lg:landscape:col--span-2 lg:landscape:bg--gray-75{% endif %}" data-ns-lead>
-          <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall border--h-black pb--1 w--full">
+      <div class="flex flex--col w--full gap--small h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
+        <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--3{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
+          <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall w--full">
             <span class="label label--base lg:label--large text--bold" data-ns-order>{{ lead_label }}</span>
-            {% if current_mode == 'nxvd' %}
-              {% render 'nutanix_severity', value: lead.severity %}
-            {% else %}
-              {% render 'nutanix_severity', value: lead.criticality %}
-            {% endif %}
+            <span class="label label--base label--outline">{{ lead.severity | default: lead.criticality | default: 'Unrated' | escape }}</span>
           </div>
-          <div class="title title--base lg:title--large text--bold nutanix-headline my--1 w--full" data-ns-subject role="heading" aria-level="2">{% render 'nutanix_subject', entry: lead, mode: current_mode %}</div>
+          <div class="title {% if view == 'full' %}title--xlarge lg:title--xxlarge{% elsif view == 'quadrant' %}title--base lg:title--large{% else %}title--large{% endif %} text--bold nutanix-headline my--1 w--full" data-ns-subject role="heading" aria-level="2">{% render 'nutanix_subject', entry: lead, mode: current_mode %}</div>
           {% if current_mode == 'nxvd' %}
-            <div class="flex flex--row flex--left flex--center-y gap--small w--full">
-              {% if lead.cvss != blank %}<span class="value value--small lg:value--base value--tnums no-shrink" data-ns-score>{{ lead.cvss | escape }}</span>{% endif %}
-              <div class="description description--large nutanix-line w--min-0">{{ lead.product | escape }}{% if lead.package != blank %} · {{ lead.package | escape }}{% endif %}</div>
+            <div class="description description--large nutanix-line w--full">
+              {% if lead.cvss != blank %}<strong>CVSS <span data-ns-score>{{ lead.cvss | escape }}</span></strong> · {% endif %}
+              {{ lead.product | escape }}{% if lead.package != blank %} · {{ lead.package | escape }}{% endif %}
+              {% if view == 'full' and lead.fixed != blank %} · <strong>Fixed in</strong> {{ lead.fixed | escape }}{% endif %}
             </div>
-            {% if lead.fixed != blank %}<div class="description description--large nutanix-line w--full"><strong>Fixed in</strong> {{ lead.fixed | escape }}</div>{% endif %}
+            {% if view != 'full' and lead.fixed != blank %}
+              <div class="description description--large nutanix-line w--full"><strong>Fixed in</strong> {{ lead.fixed | escape }}</div>
+            {% endif %}
           {% else %}
-            <div class="description description--large nutanix-line w--full">SA #{{ lead.advisoryNumber | escape }}{% if lead.date != blank %} · {{ lead.date | escape }}{% endif %}</div>
-            {% if lead.affectedVersions != blank %}<div class="description description--large nutanix-line w--full"><strong>Affects</strong> {{ lead.affectedVersions | escape }}</div>{% endif %}
-          {% endif %}
-          {% if current_mode == 'nxvd' and lead.cesa != blank %}
-            <div class="description description--large nutanix-line w--full hidden lg:landscape:block">{{ lead.cesa | escape }}</div>
+            <div class="description description--large nutanix-line w--full">
+              {% if lead.date != blank %}<strong>{{ lead.date | date: '%b %-d, %Y' | escape }}</strong> · {% endif %}SA #{{ lead.advisoryNumber | escape }}
+              {% if view == 'full' and lead.affectedVersions != blank %} · Affects {{ lead.affectedVersions | escape }}{% endif %}
+            </div>
+            {% if view != 'full' and lead.affectedVersions != blank %}
+              <div class="description description--large nutanix-line w--full">Affects {{ lead.affectedVersions | escape }}</div>
+            {% endif %}
           {% endif %}
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0
-            {% case view %}
-              {% when 'full' %}px--3 lg:px--4 lg:landscape:px--0 lg:landscape:col--span-4
-              {% when 'half_horizontal' %}portrait:px--3 lg:portrait:px--4
-              {% when 'quadrant' %}hidden lg:block lg:px--4
-              {% else %}px--3 lg:px--4
-            {% endcase %}" aria-label="{{ table_heading }}">
-            <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}lg:landscape:table--large{% endif %}">
+          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% endif %}" aria-label="{{ table_heading }}">
+            <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}lg:portrait:table--large{% endif %}">
               <thead>
                 <tr>
                   <th scope="col"><span class="title title--small">{{ table_heading }}</span></th>
                   {% if view == 'full' %}
-                    <th scope="col" class="hidden lg:landscape:table-cell w--28">
+                    <th scope="col" class="hidden landscape:table-cell lg:table-cell w--28 lg:w--36">
                       <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product{% else %}Published{% endif %}</span>
                     </th>
-                    {% if current_mode == 'nxvd' %}
-                      <th scope="col" class="hidden lg:landscape:table-cell w--36"><span class="label label--base text--bold">Fixed in</span></th>
-                    {% endif %}
+                    <th scope="col" class="hidden lg:landscape:table-cell {% if current_mode == 'nxvd' %}w--48{% else %}w--20{% endif %}">
+                      <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Fixed in{% else %}SA #{% endif %}</span>
+                    </th>
                   {% endif %}
                   <th scope="col" class="text--right {{ severity_width }}">
                     <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}<span class="{{ score_visibility }}">CVSS · </span>{% endif %}Severity</span>
@@ -162,21 +156,23 @@
                 {% for entry in records offset: 1 limit: row_limit %}
                   <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}lg:table-row"{% endif %}>
                     <td>
-                      <div class="title {% if compact %}title--small{% else %}title--base{% endif %} text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
+                      <div class="title {% if compact %}title--small{% else %}title--base{% if view == 'full' %} lg:landscape:title--large{% endif %}{% endif %} text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
                       {% unless compact %}
-                        <div class="description description--large nutanix-line {% if view == 'full' %}lg:landscape:hidden{% endif %}">
+                        <div class="description description--large nutanix-line {% if view == 'full' %}landscape:hidden lg:hidden{% endif %}">
                           {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
                         </div>
                       {% endunless %}
                     </td>
                     {% if view == 'full' %}
-                      <td class="hidden lg:landscape:table-cell">
+                      <td class="hidden landscape:table-cell lg:table-cell">
                         <div class="label label--base nutanix-line">
                           {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
                         </div>
                       </td>
                       {% if current_mode == 'nxvd' %}
                         <td class="hidden lg:landscape:table-cell"><div class="label label--base nutanix-line">{{ entry.fixed | default: '—' | escape }}</div></td>
+                      {% else %}
+                        <td class="hidden lg:landscape:table-cell"><div class="label label--base nutanix-line">{{ entry.advisoryNumber | escape }}</div></td>
                       {% endif %}
                     {% endif %}
                     <td class="text--right">

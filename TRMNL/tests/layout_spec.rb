@@ -61,7 +61,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen).to have_no_css('.title_bar')
           expect(screen).to have_no_css('.layout a')
-          expect(screen).to have_css('[data-ns-mast] svg.qr-code', count: 1)
+          expect(screen.has_css?('[data-ns-mast] svg.qr-code')).to eq(view == 'full' && device_name.start_with?('x'))
           expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
@@ -127,9 +127,8 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['rows']).to eq([remaining, row_limits.fetch(device_name)[view_index]].min)
           expect(geometry['renderedRows']).to eq([remaining, row_limits.fetch('x')[view_index]].min)
           if count > 1 && view == 'full' && %w[og x].include?(device_name)
-            expect(geometry['beside']).to eq(device_name == 'x')
-            columns = device_name == 'x' ? (mode == 'nxvd' ? 4 : 3) : 2
-            expect(geometry['columns']).to eq(columns)
+            expect(geometry['beside']).to be(false)
+            expect(geometry['columns']).to eq(device_name == 'x' ? 4 : 3)
           end
 
           FileUtils.mkdir_p('_build/previews')
@@ -185,7 +184,7 @@ RSpec.describe 'Nutanix Security layouts' do
                             mocks: { mocks.keys.first => failure }, state: live.state)
       expect(screen).to have_no_transform_error
       expect(screen).to have_text('Saved 2026-11-20')
-      expect(screen).to have_css('[data-ns-mast] svg.qr-code', count: 1)
+      expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
       expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label)
       expect(screen.result.data.fetch('source_error')).to eq(reason)
       expect(screen.result.state).to eq(live.state)
