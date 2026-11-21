@@ -15,6 +15,7 @@ Captured from the Nutanix portal on November 20, 2026. [All layout previews](TRM
 | Setting | Options |
 | --- | --- |
 | Table to display | Security Advisories (default) or Security Vulnerabilities (NXVD) |
+| Advisory order | Latest first (default) or Highest criticality first |
 | Product (NXVD) | All products (default), AOS, AHV, Prism, Files, NDB, WitnessVM or Witness Service |
 
 ## Develop locally
@@ -26,7 +27,7 @@ cd TRMNL
 trmnlp serve
 ```
 
-The local preview uses the table and product in [TRMNL/.trmnlp.yml](TRMNL/.trmnlp.yml) to fetch from Nutanix. Templates and settings live in [TRMNL/src/](TRMNL/src/). The [plugin guide](TRMNL/README.md) covers setup and checks.
+Set the table, advisory order, and NXVD product for local previews in [TRMNL/.trmnlp.yml](TRMNL/.trmnlp.yml). Templates and settings live in [TRMNL/src/](TRMNL/src/). The [plugin guide](TRMNL/README.md) covers setup and checks.
 
 ## Sources
 

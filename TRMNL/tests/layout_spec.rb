@@ -7,7 +7,7 @@ RSpec.describe 'Nutanix Security layouts' do
 
   advisories = (1..20).map do |n|
     {
-      advisoryNumber: format('%04d', n), criticality: n > 3 ? 'Critical' : 'High',
+      advisoryNumber: format('%04d', n), criticality: (4..19).cover?(n) ? 'Critical' : 'High',
       date: "Nov #{n}, 2026",
       affectedVersions: 'Nutanix AOS, Prism Central, and AHV on the affected software releases',
       summary: "Investigation and BreakFix Guidance for CVE-2099-#{1000 + n} in a component with a very long name affecting several product versions",
@@ -23,13 +23,15 @@ RSpec.describe 'Nutanix Security layouts' do
     }
   end
 
+  advisory_mocks = { "GET #{advisories_url}" => { json: { content: { body: advisories.rotate(2) } } } }
   cases = {
-    'advisories' => ['advisories', { "GET #{advisories_url}" => { json: { content: { body: advisories.rotate(2) } } } }, 'CVE-2099-1020', 20],
+    'advisories' => ['advisories', advisory_mocks, 'CVE-2099-1020', 20],
     'advisories-empty' => ['advisories', { "GET #{advisories_url}" => { json: { content: { body: [] } } } }, 'No advisories returned', 0],
     'nxvd' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released, totalCount: 200 } } }, 'CVE-2099-1001', 20],
     'nxvd-single' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released.take(1) } } }, 'CVE-2099-1001', 1],
     'nxvd-empty' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [] } } }, 'No released fixes on this page', 0],
-    'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503', 0]
+    'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503', 0],
+    'advisories-criticality' => ['advisories', advisory_mocks, 'CVE-2099-1019', 20, 'criticality']
   }
   devices = {
     'og' => { model: 'og_png', width: 800, height: 480, bit_depth: 1, screen_classes: 'screen screen--og_png screen--md screen--1bit' },
@@ -39,11 +41,12 @@ RSpec.describe 'Nutanix Security layouts' do
   }
   views = %w[full half_horizontal half_vertical quadrant]
 
-  cases.each do |scenario, (mode, mocks, label, count)|
+  cases.each do |scenario, (mode, mocks, label, count, advisory_sort)|
     devices.each do |device_name, device|
       views.each do |view|
         it "renders #{scenario} on #{device_name} #{view}" do
           fields = { table_type: mode, nxvd_product: 'aos' }
+          fields[:advisory_sort] = advisory_sort if advisory_sort
           screen = trmnl.render(view: view, device: device, custom_fields: fields, mocks: mocks)
           expect(screen).to have_no_transform_error
           expect(screen).to have_text(label)
@@ -59,8 +62,10 @@ RSpec.describe 'Nutanix Security layouts' do
             expect(screen.find('[data-ns-score]').text).to eq('9.8')
             expect(screen).to have_text('Fixed in')
           elsif count.positive?
-            expect(screen).to have_text("SA #0020")
-            expect(screen).to have_text('Nov 20, 2026')
+            day = advisory_sort == 'criticality' ? 19 : 20
+            expect(screen).to have_text("SA #00#{day}")
+            expect(screen).to have_text("Nov #{day}, 2026")
+            expect(screen).to have_text(advisory_sort == 'criticality' ? 'BY CRITICALITY' : 'LATEST ADVISORY')
             expect(screen).to have_no_text('Investigation and BreakFix Guidance for')
           end
 

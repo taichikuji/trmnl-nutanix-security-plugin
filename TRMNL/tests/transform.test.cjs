@@ -66,15 +66,39 @@ test('Advisories default to one GET and keep only fields used by the table or fe
   assert.equal(request.options.body, undefined);
   assert.deepEqual(data, {
     mode: 'advisories', feed_state: 'LIVE',
-    content: { body: [
+    content: { criticality_first: false, body: [
       { advisoryNumber: '61', criticality: 'High', date: 'November 18, 2026', summary: 'Security update available' },
       { advisoryNumber: '62', criticality: 'High', date: 'November 19, 2026', summary: 'Security update available', affectedVersions: 'AHV' },
     ] },
   });
 });
 
+test('Advisory order ranks criticality first and breaks ties by publication date', async () => {
+  const entries = [
+    { ...advisory, advisoryNumber: 'old-critical', date: 'November 15, 2026', criticality: 'Critical' },
+    { ...advisory, advisoryNumber: 'medium', date: 'November 16, 2026', criticality: 'Medium' },
+    { ...advisory, advisoryNumber: 'new-critical', date: 'November 17, 2026', criticality: ' critical ', affectedVersions: 'AHV' },
+    { ...advisory, advisoryNumber: 'latest', date: 'November 19, 2026' },
+    { ...advisory, advisoryNumber: 'unrated', date: 'November 18, 2026', criticality: null },
+  ];
+  const payload = json({ content: { body: entries } });
+  const { request, data } = await refresh({ advisory_sort: 'criticality' }, payload);
+  assert.equal(request.url, advisoryUrl);
+  assert.equal(data.content.criticality_first, true);
+  assert.deepEqual(data.content.body.map((row) => row.advisoryNumber),
+    ['unrated', 'medium', 'latest', 'old-critical', 'new-critical']);
+  assert.equal(data.content.body.at(-1).affectedVersions, 'AHV');
+  assert.equal(data.content.body.at(-2).affectedVersions, undefined);
+
+  for (const advisory_sort of ['latest', 'unknown']) {
+    const result = await refresh({ advisory_sort }, payload);
+    assert.equal(result.data.content.criticality_first, false);
+    assert.equal(result.data.content.body.at(-1).advisoryNumber, 'latest');
+  }
+});
+
 test('NXVD requests one 20-row CVSS page instead of exporting the feed', async () => {
-  const { request, data } = await refresh({ table_type: 'nxvd' }, nxvd([vulnerability], 2837));
+  const { request, data } = await refresh({ table_type: 'nxvd', advisory_sort: 'criticality' }, nxvd([vulnerability], 2837));
   assert.equal(request.url, nxvdUrl);
   assert.equal(request.options.method, 'POST');
   assert.equal(request.options.headers['Content-Type'], 'application/json');

@@ -22,6 +22,18 @@ custom_fields:
       - 'Security Vulnerabilities (NXVD)': nxvd
     default: advisories
     description: Select Nutanix data source
+    conditional_validation:
+      - when: advisories
+        visible:
+          - advisory_sort
+  - keyname: advisory_sort
+    name: Advisory order
+    field_type: select
+    options:
+      - 'Latest first': latest
+      - 'Highest criticality first': criticality
+    default: latest
+    optional: true
   - keyname: nxvd_product
     name: Product (NXVD)
     field_type: select

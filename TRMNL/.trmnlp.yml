@@ -5,4 +5,5 @@ watch:
 
 custom_fields:
   table_type: advisories
+  advisory_sort: latest
   nxvd_product: all

@@ -2,6 +2,7 @@
 const SOURCE = 'https://portal.nutanix.com';
 const TIMEOUT_MS = 4500;
 const PAGE_SIZE = 20;
+const ADVISORY_CRITICALITY = ['informational', 'low', 'medium', 'high', 'critical'];
 const PRODUCTS = new Map([
   ['aos', 'AOS'],
   ['ahv', 'AHV'],
@@ -29,10 +30,16 @@ function listText(value) {
   return Array.isArray(value) ? value.map(text).filter(Boolean).join(', ') : '';
 }
 
-function advisoryData(entries) {
-  // The layout reverses publication order and only the featured item shows affected versions.
-  const sorted = [...entries].sort((left, right) =>
-    (Date.parse(text(left.date)) || 0) - (Date.parse(text(right.date)) || 0));
+function advisoryData(entries, criticalityFirst) {
+  // The layout reverses this order and only the featured item shows affected versions.
+  const sorted = [...entries].sort((left, right) => {
+    const byDate = (Date.parse(text(left.date)) || 0) - (Date.parse(text(right.date)) || 0);
+    if (!criticalityFirst) return byDate;
+
+    const leftRank = ADVISORY_CRITICALITY.indexOf(text(left.criticality).trim().toLowerCase());
+    const rightRank = ADVISORY_CRITICALITY.indexOf(text(right.criticality).trim().toLowerCase());
+    return leftRank - rightRank || byDate;
+  });
   const body = sorted.map((entry, index) => ({
     advisoryNumber: text(entry.advisoryNumber),
     criticality: text(entry.criticality),
@@ -43,7 +50,7 @@ function advisoryData(entries) {
   return {
     mode: 'advisories',
     feed_state: entries.length ? 'LIVE' : 'EMPTY',
-    content: { body },
+    content: { body, criticality_first: criticalityFirst },
   };
 }
 
@@ -132,5 +139,5 @@ async function run(input) {
   if (!Array.isArray(entries) || !entries.every(validEntry)) {
     return sourceFailure(mode, 'UNEXPECTED DATA', 'The Nutanix response format changed.', startedAt);
   }
-  return isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries);
+  return isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries, fields?.advisory_sort === 'criticality');
 }

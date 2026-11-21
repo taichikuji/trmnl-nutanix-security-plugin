@@ -22,6 +22,8 @@
 {% assign current_mode = mode | default: 'advisories' %}
 {% assign is_nxvd = false %}
 {% assign heading = 'Security advisories' %}
+{% assign advisory_table_heading = 'Earlier advisories' %}
+{% if content.criticality_first %}{% assign advisory_table_heading = 'More advisories' %}{% endif %}
 {% assign records = content.body | reverse %}
 {% if current_mode == 'nxvd' %}
   {% assign is_nxvd = true %}
@@ -92,7 +94,7 @@
                 <span class="label label--small text--bold">BY CVSS</span>
                 {% if lead.cesa != blank %}<span class="label label--small">{{ lead.cesa | escape }}</span>{% endif %}
               {% else %}
-                <span class="label label--small text--bold">LATEST ADVISORY</span>
+                <span class="label label--small text--bold">{% if content.criticality_first %}BY CRITICALITY{% else %}LATEST ADVISORY{% endif %}</span>
                 {% if lead.date != blank %}<time class="label label--small">{{ lead.date | escape }}</time>{% endif %}
                 <span class="label label--small">SA #{{ lead.advisoryNumber | escape }}</span>
               {% endif %}
@@ -120,12 +122,12 @@
 
         {% if record_count > 1 %}
           {% comment %}Allow for row heights changing when the framework clamps text.{% endcomment %}
-          <section class="flex flex--col flex--top self--stretch w--full h--min-0 grow gap--none pb--6 lg:pb--7 {% if split %}col--span-2{% elsif view == 'full' %}lg:landscape:col--span-4{% elsif view == 'quadrant' %}hidden lg:flex{% endif %}" aria-label="{% if is_nxvd %}More released fixes{% else %}Earlier advisories{% endif %}">
+          <section class="flex flex--col flex--top self--stretch w--full h--min-0 grow gap--none pb--6 lg:pb--7 {% if split %}col--span-2{% elsif view == 'full' %}lg:landscape:col--span-4{% elsif view == 'quadrant' %}hidden lg:flex{% endif %}" aria-label="{% if is_nxvd %}More released fixes{% else %}{{ advisory_table_heading }}{% endif %}">
             <div class="w--full grow h--min-0">
               <table class="table {% if split or view == 'quadrant' %}table--xsmall lg:table--small{% else %}table--small{% endif %}" data-table-limit="true" data-table-overflow-counter="false">
                 <thead>
                   <tr>
-                    <th scope="col"><span class="title title--small">{% if is_nxvd %}Released fixes{% else %}Earlier advisories{% endif %}</span></th>
+                    <th scope="col"><span class="title title--small">{% if is_nxvd %}Released fixes{% else %}{{ advisory_table_heading }}{% endif %}</span></th>
                     {% if wide %}
                       <th scope="col" class="hidden lg:landscape:table-cell"><span class="title title--small">{% if is_nxvd %}Product{% else %}Published{% endif %}</span></th>
                       {% if is_nxvd and view == 'full' %}<th scope="col" class="hidden lg:landscape:table-cell"><span class="title title--small">Fixed in</span></th>{% endif %}

@@ -8,7 +8,7 @@ From the repository root, build the private plugin ZIP:
 python3 scripts/package-import.py
 ```
 
-On the [Private Plugins page](https://trmnl.com/plugin_settings?keyname=private_plugin), select **Import new** and upload `dist/trmnl-nutanix-sec-plugin.zip`. Choose **Table to display** in the plugin settings. **Product (NXVD)** applies to the vulnerabilities table.
+On the [Private Plugins page](https://trmnl.com/plugin_settings?keyname=private_plugin), select **Import new** and upload `dist/trmnl-nutanix-sec-plugin.zip`. Choose **Table to display** in the plugin settings. Use **Advisory order** for Security Advisories or **Product (NXVD)** for the vulnerabilities table.
 
 For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
 
@@ -32,7 +32,7 @@ Recorded on November 20, 2026 using public Nutanix data.
 
 ## Templates
 
-[Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available.
+[Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication by default. **Highest criticality first** ranks advisories by severity and shows newer publications first within each severity. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available.
 
 The full OG view stacks the lead and table. The full landscape X view uses a separate lead panel beside a wider table with dedicated publication dates or product and fixed-release columns. Portrait views stack the content. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
