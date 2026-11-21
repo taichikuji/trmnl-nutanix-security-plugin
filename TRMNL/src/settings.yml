@@ -12,7 +12,7 @@ serverless_language: node
 refresh_interval: 360
 no_screen_padding: 'no'
 dark_mode: 'no'
-framework_version: 3.4.4
+framework_version: 3.4.6
 custom_fields:
   - keyname: table_type
     name: Table to display

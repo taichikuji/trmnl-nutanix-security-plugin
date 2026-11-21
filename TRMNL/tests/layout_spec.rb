@@ -1,5 +1,6 @@
 require 'fileutils'
 require 'json'
+require 'yaml'
 
 RSpec.describe 'Nutanix Security layouts' do
   advisories_url = 'https://portal.nutanix.com/api/v1/pages/securityAdvisories'
@@ -40,10 +41,16 @@ RSpec.describe 'Nutanix Security layouts' do
     'x-portrait' => { model: 'v2', width: 1404, height: 1872, bit_depth: 4, screen_classes: 'screen screen--v2 screen--lg screen--4bit screen--portrait' }
   }
   views = %w[full half_horizontal half_vertical quadrant]
+  row_limits = {
+    'og' => [4, 3, 4, 0],
+    'og-portrait' => [8, 3, 8, 0],
+    'x' => [10, 5, 9, 2],
+    'x-portrait' => [10, 5, 9, 2]
+  }
 
   cases.each do |scenario, (mode, mocks, label, count, advisory_sort)|
     devices.each do |device_name, device|
-      views.each do |view|
+      views.each_with_index do |view, view_index|
         it "renders #{scenario} on #{device_name} #{view}" do
           fields = { table_type: mode, nxvd_product: 'aos' }
           fields[:advisory_sort] = advisory_sort if advisory_sort
@@ -54,18 +61,18 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen).to have_no_css('.title_bar')
           expect(screen).to have_no_css('.layout a')
+          expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
           if count.positive? && mode == 'nxvd'
-            expect(screen).to have_text("#{count} on page")
             expect(screen.find('[data-ns-score]').text).to eq('9.8')
             expect(screen).to have_text('Fixed in')
           elsif count.positive?
             day = advisory_sort == 'criticality' ? 19 : 20
             expect(screen).to have_text("SA #00#{day}")
             expect(screen).to have_text("Nov #{day}, 2026")
-            expect(screen).to have_text(advisory_sort == 'criticality' ? 'BY CRITICALITY' : 'LATEST ADVISORY')
+            expect(screen.find('[data-ns-order]').text).to eq(advisory_sort == 'criticality' ? 'By criticality' : 'Latest advisory')
             expect(screen).to have_no_text('Investigation and BreakFix Guidance for')
           end
 
@@ -88,14 +95,13 @@ RSpec.describe 'Nutanix Security layouts' do
               const boxes = [...rows, ...document.querySelectorAll('thead, [data-ns-lead]')]
                 .filter(element => element.getClientRects().length)
                 .map(element => element.getBoundingClientRect());
-              const cellOverflow = rows.some(row => [...row.querySelectorAll('[data-clamp]')].some(element => {
+              const cellOverflow = rows.some(row => [...row.querySelectorAll('.nutanix-line')].some(element => {
                 if (!element.getClientRects().length) return false;
-                const text = document.createRange();
-                text.selectNodeContents(element);
-                return text.getBoundingClientRect().right > element.closest('td').getBoundingClientRect().right + 1;
+                return element.getBoundingClientRect().right > element.closest('td').getBoundingClientRect().right + 1;
               }));
               return {
                 rows: rows.length,
+                renderedRows: document.querySelectorAll('[data-ns-row]').length,
                 cellOverflow,
                 widthOverflow: mast.scrollWidth - mast.clientWidth,
                 clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > frame.bottom + 1 ||
@@ -108,16 +114,13 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['widthOverflow']).to be <= 1
           expect(geometry['clipped']).to be(false)
           expect(geometry['cellOverflow']).to be(false)
-          if count <= 1 || (view == 'quadrant' && device_name.start_with?('og'))
-            expect(geometry['rows']).to eq(0)
-          else
-            expect(geometry['rows']).to be_between(1, count - 1)
-          end
+          remaining = [count - 1, 0].max
+          expect(geometry['rows']).to eq([remaining, row_limits.fetch(device_name)[view_index]].min)
+          expect(geometry['renderedRows']).to eq([remaining, row_limits.fetch('x')[view_index]].min)
           if count > 1 && view == 'full' && %w[og x].include?(device_name)
             expect(geometry['beside']).to eq(device_name == 'x')
             columns = device_name == 'x' ? (mode == 'nxvd' ? 4 : 3) : 2
             expect(geometry['columns']).to eq(columns)
-            expect(geometry['rows']).to eq(count - 1) if device_name == 'x' && mode == 'nxvd'
           end
 
           FileUtils.mkdir_p('_build/previews')
@@ -126,6 +129,34 @@ RSpec.describe 'Nutanix Security layouts' do
           image.write("_build/previews/#{scenario}-#{device_name}-#{view}.png")
         end
       end
+    end
+  end
+
+  %w[og x].each do |device_name|
+    it "keeps the full #{device_name} layout steady while framework JavaScript loads" do
+      version = YAML.safe_load_file(File.expand_path('../src/settings.yml', __dir__)).fetch('framework_version')
+      overrides = {
+        "https://trmnl.com/js/#{version}/plugins.js" => {
+          body: 'window.TRMNL_PLUGINS_READY = true; window.nutanixCssOnly = true;',
+          content_type: 'application/javascript'
+        }
+      }
+      args = { view: 'full', device: devices.fetch(device_name),
+               custom_fields: { table_type: 'advisories' }, mocks: advisory_mocks }
+      geometry = <<~JS
+        Array.from(document.querySelectorAll('[data-ns-mast], [data-ns-lead], [data-ns-subject], table, [data-ns-row]'))
+          .filter(element => element.getClientRects().length)
+          .map(element => {
+            const { x, y, width, height } = element.getBoundingClientRect();
+            return [x, y, width, height].map(Math.round);
+          })
+      JS
+      initial = trmnl.render(**args, asset_overrides: overrides)
+      expect(initial.evaluate('Boolean(window.nutanixCssOnly)')).to eq(true)
+      before = initial.evaluate(geometry)
+      settled = trmnl.render(**args)
+      expect(settled.evaluate('Boolean(window.TRMNL_PLUGINS_READY && !window.nutanixCssOnly)')).to eq(true)
+      expect(settled.evaluate(geometry)).to eq(before)
     end
   end
 end

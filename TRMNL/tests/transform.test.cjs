@@ -115,6 +115,23 @@ test('NXVD requests one 20-row CVSS page instead of exporting the feed', async (
   });
 });
 
+test('Advisories keep only the leading 11 items after sorting', async () => {
+  const entries = Array.from({ length: 16 }, (_, index) => ({
+    ...advisory,
+    advisoryNumber: index + 1,
+    date: `November ${index + 1}, 2026`,
+    criticality: index === 0 ? 'Critical' : 'High',
+  }));
+  const payload = json({ content: { body: entries } });
+  const latest = await refresh({ advisory_sort: 'latest' }, payload);
+  assert.deepEqual(latest.data.content.body.map(row => row.advisoryNumber),
+    ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']);
+
+  const criticality = await refresh({ advisory_sort: 'criticality' }, payload);
+  assert.deepEqual(criticality.data.content.body.map(row => row.advisoryNumber),
+    ['7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '1']);
+});
+
 test('NXVD maps every saved product option to the portal product array', async () => {
   const products = {
     aos: 'AOS', ahv: 'AHV', prism: 'Prism', files: 'Files', ndb: 'NDB',
@@ -149,10 +166,10 @@ test('NXVD counts retained rows, preserves the response order, and caps oversize
     docUrl: 'https://private.example',
   }));
   const { data } = await refresh({ table_type: 'nxvd' }, nxvd(rows, 3000));
-  assert.equal(data.nxvd.total, 20);
+  assert.equal(data.nxvd.total, 11);
   assert.equal(data.nxvd.critical, 8);
-  assert.equal(data.nxvd.high, 12);
-  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 22).map((row) => row.cesa));
+  assert.equal(data.nxvd.high, 3);
+  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 13).map((row) => row.cesa));
   assert.doesNotMatch(JSON.stringify(data), /PRIVATE|private\.example|jira|docUrl/);
 });
 

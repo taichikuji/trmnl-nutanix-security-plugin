@@ -8,7 +8,7 @@ Displays Nutanix Security Advisories or released fixes from the Nutanix Vulnerab
 
 ![Nutanix Security Advisories on TRMNL](TRMNL/media/preview_full.webp)
 
-Captured from the Nutanix portal on November 20, 2026. [All layout previews](TRMNL/README.md#previews).
+Captured from the Nutanix portal on November 21, 2026. [All layout previews](TRMNL/README.md#previews).
 
 ## Settings
 

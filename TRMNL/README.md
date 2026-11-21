@@ -18,7 +18,7 @@ The listing icon is available at [media/icon.svg](media/icon.svg). Upload it sep
 
 ## Previews
 
-Recorded on November 20, 2026 using public Nutanix data.
+Recorded on November 21, 2026 using public Nutanix data.
 
 | Security Advisories | Full | Half horizontal | Half vertical | Quadrant |
 | --- | --- | --- | --- | --- |
@@ -36,20 +36,18 @@ Recorded on November 20, 2026 using public Nutanix data.
 
 The full OG view stacks the lead and table. The full landscape X view uses a separate lead panel beside a wider table with dedicated publication dates or product and fixed-release columns. Portrait views stack the content. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
-The native table fits rows to the space available. These landscape previews use the same public data for both devices. Counts include the featured item and vary with the feed, title lengths, and display scale. [TRMNL table overflow](https://trmnl.com/framework/docs/3.4/table_overflow)
+The templates cap the number of rows before rendering. Framework 3.4.6 handles typography, table sizing, and responsive visibility. Text clips in place as the browser lays out the page. The landscape limits below include the featured item.
 
-| Layout | OG Advisories | X Advisories | OG NXVD | X NXVD |
-| --- | ---: | ---: | ---: | ---: |
-| Full | 9 | 22 | 8 | 15 |
-| Half horizontal | 6 | 9 | 6 | 8 |
-| Half vertical | 9 | 16 | 8 | 15 |
-| Quadrant | 1 | 6 | 1 | 5 |
-
-The sample NXVD page supplied 15 fixes. The full landscape X regression shows all 20 fixes on a filled page.
+| Layout | OG | X |
+| --- | ---: | ---: |
+| Full | 5 | 11 |
+| Half horizontal | 4 | 6 |
+| Half vertical | 5 | 10 |
+| Quadrant | 1 | 3 |
 
 ## Data behavior
 
-Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. Serverless keeps only the fields used on screen. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested, and the counts on screen cover only released fixes in that page. TRMNL fits table rows when it renders each layout from the refreshed data. Check deployed versions separately to determine which fixes a cluster has.
+Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 11 ranked items to TRMNL for the largest layout and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
 
 The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
 

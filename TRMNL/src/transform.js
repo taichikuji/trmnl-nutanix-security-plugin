@@ -2,6 +2,8 @@
 const SOURCE = 'https://portal.nutanix.com';
 const TIMEOUT_MS = 4500;
 const PAGE_SIZE = 20;
+// The largest view uses one featured item and ten table rows.
+const DISPLAY_LIMIT = 11;
 const ADVISORY_CRITICALITY = ['informational', 'low', 'medium', 'high', 'critical'];
 const PRODUCTS = new Map([
   ['aos', 'AOS'],
@@ -39,7 +41,7 @@ function advisoryData(entries, criticalityFirst) {
     const leftRank = ADVISORY_CRITICALITY.indexOf(text(left.criticality).trim().toLowerCase());
     const rightRank = ADVISORY_CRITICALITY.indexOf(text(right.criticality).trim().toLowerCase());
     return leftRank - rightRank || byDate;
-  });
+  }).slice(-DISPLAY_LIMIT);
   const body = sorted.map((entry, index) => ({
     advisoryNumber: text(entry.advisoryNumber),
     criticality: text(entry.criticality),
@@ -57,7 +59,7 @@ function advisoryData(entries, criticalityFirst) {
 function vulnerabilityData(entries, product) {
   const rows = entries
     .filter((entry) => entry.status === 'Released' && (!product || entry.productName === product))
-    .slice(0, PAGE_SIZE)
+    .slice(0, DISPLAY_LIMIT)
     .map((entry) => {
       const cvss = text(entry.cvss).trim();
       return {
