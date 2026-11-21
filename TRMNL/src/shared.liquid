@@ -65,6 +65,7 @@
 {% endcase %}
 
 <style>
+  .screen:not(.screen--lg) .nutanix-qr .qr-code { width: 82px; }
   .nutanix-table { table-layout: fixed; }
   .nutanix-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nutanix-headline {
@@ -75,7 +76,7 @@
 </style>
 
 <div class="layout layout--col layout--stretch gap--none">
-  <section class="flex flex--col h--full w--full gap--small" aria-label="Nutanix {{ heading }}">
+  <section class="flex flex--col h--full w--full {% if view == 'full' %}gap--xsmall lg:gap--small{% else %}gap--small{% endif %}" aria-label="Nutanix {{ heading }}">
     <header class="flex flex--row flex--left flex--center-y gap--small w--full px--3 no-shrink" data-ns-mast>
       <svg viewBox="0 0 256 256" class="w--8 h--8 lg:w--10 lg:h--10 no-shrink" aria-hidden="true">
         <path fill="currentColor" fill-rule="evenodd" d="M27 27H90L128 65L166 27H229V90L191 128L229 166V229H166L128 191L90 229H27V166L65 128L27 90Z M35 35H86L128 77L170 35H221V86L179 128L221 170V221H170L128 179L86 221H35V170L77 128L35 86Z"/>
@@ -85,7 +86,7 @@
         <div class="title title--base lg:title--large text--bold" role="heading" aria-level="1">{{ heading }}</div>
       </div>
       {% if portal_url != blank and view == 'full' %}
-        <div class="hidden lg:flex flex--col w--12 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
+        <div class="flex flex--col nutanix-qr lg:w--12 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
           {{ portal_url | qr_code: 2, 'l' }}
         </div>
       {% endif %}
@@ -106,8 +107,8 @@
         {% endif %}
       </div>
     {% else %}
-      <div class="flex flex--col w--full gap--small h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
-        <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--3{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
+      <div class="flex flex--col w--full {% if view == 'full' %}gap--xsmall lg:gap--small{% else %}gap--small{% endif %} h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
+        <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--1 lg:py--3{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
           <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall w--full">
             <span class="label label--base lg:label--large text--bold" data-ns-order>{{ lead_label }}</span>
             <span class="label label--base label--outline">{{ lead.severity | default: lead.criticality | default: 'Unrated' | escape }}</span>
