@@ -34,6 +34,8 @@ Recorded on November 21, 2026 using public Nutanix data.
 
 [Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication by default. **Highest criticality first** ranks advisories by severity and shows newer publications first within each severity. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available.
 
+Scan the QR code in the header to open the selected table on Nutanix's support portal. NXVD opens with your selected product. The portal uses its own sort order.
+
 The full OG view stacks the lead and table. The full landscape X view uses a separate lead panel beside a wider table with dedicated publication dates or product and fixed-release columns. Portrait views stack the content. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
 The templates cap the number of rows before rendering. Framework 3.4.6 handles typography, table sizing, and responsive visibility. Text clips in place as the browser lays out the page. The landscape limits below include the featured item.

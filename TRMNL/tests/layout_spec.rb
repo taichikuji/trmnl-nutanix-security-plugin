@@ -61,6 +61,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen).to have_no_css('.title_bar')
           expect(screen).to have_no_css('.layout a')
+          expect(screen).to have_css('[data-ns-mast] svg.qr-code', count: 1)
           expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
@@ -184,6 +185,7 @@ RSpec.describe 'Nutanix Security layouts' do
                             mocks: { mocks.keys.first => failure }, state: live.state)
       expect(screen).to have_no_transform_error
       expect(screen).to have_text('Saved 2026-11-20')
+      expect(screen).to have_css('[data-ns-mast] svg.qr-code', count: 1)
       expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label)
       expect(screen.result.data.fetch('source_error')).to eq(reason)
       expect(screen.result.state).to eq(live.state)

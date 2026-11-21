@@ -65,7 +65,8 @@ test('Advisories default to one GET and keep only fields used by the table or fe
   assert.equal(request.url, advisoryUrl);
   assert.equal(request.options.method ?? 'GET', 'GET');
   assert.equal(request.options.body, undefined);
-  const { trmnl_state: saved, ...display } = data;
+  const { trmnl_state: saved, portal_url, ...display } = data;
+  assert.equal(portal_url, portal + '/page/security/security-advisories/list');
   assert.deepEqual(display, {
     mode: 'advisories', feed_state: 'LIVE',
     content: { criticality_first: false, body: [
@@ -147,6 +148,8 @@ test('NXVD maps every saved product option to the portal product array', async (
       { ...vulnerability, productName, status: 'Pending Release' },
     ]));
     assert.deepEqual(JSON.parse(result.request.options.body), { ...expectedPage, product: [productName] });
+    assert.equal(result.data.portal_url,
+      portal + '/page/security/security-vulnerabilities/list?softwareType=' + encodeURIComponent(productName));
     assert.equal(result.data.nxvd.total, 1);
     assert.equal(result.data.nxvd.rows[0].product, productName);
   }
@@ -154,8 +157,9 @@ test('NXVD maps every saved product option to the portal product array', async (
 
 test('All and unknown products use the same unfiltered request', async () => {
   for (const product of ['all', 'constructor']) {
-    const { request } = await refresh({ table_type: 'nxvd', nxvd_product: product }, nxvd([]));
+    const { request, data } = await refresh({ table_type: 'nxvd', nxvd_product: product }, nxvd([]));
     assert.deepEqual(JSON.parse(request.options.body), expectedPage);
+    assert.equal(data.portal_url, portal + '/page/security/security-vulnerabilities/list?softwareType=All');
   }
 });
 
@@ -215,6 +219,7 @@ test('Both feeds show a matching saved snapshot after a timeout and update it af
     assert.equal(failed.data.source_error, 'TIMEOUT');
     assert.equal(failed.data.saved_at, saved.saved_at);
     assert.deepEqual(failed.data[dataKey], first.data[dataKey]);
+    assert.equal(failed.data.portal_url, first.data.portal_url);
     assert.equal(failed.data.trmnl_state, undefined);
     assert.doesNotMatch(JSON.stringify(failed.data), /PRIVATE/);
 

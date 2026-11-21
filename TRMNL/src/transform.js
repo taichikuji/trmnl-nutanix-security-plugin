@@ -96,10 +96,13 @@ async function run(input) {
   const selection = isNxvd ? `nxvd:${product ?? 'all'}` : `advisories:${criticalityFirst ? 'criticality' : 'latest'}`;
   const saved = input?.trmnl?.state;
   const url = SOURCE + (isNxvd ? '/api/v1/vulnerabilities' : '/api/v1/pages/securityAdvisories');
+  const portal_url = SOURCE + (isNxvd
+    ? '/page/security/security-vulnerabilities/list?softwareType=' + encodeURIComponent(product ?? 'All')
+    : '/page/security/security-advisories/list');
   const startedAt = Date.now();
   const sourceFailure = (reason, message) => {
     console.error(`Nutanix ${mode}: ${reason} after ${Date.now() - startedAt}ms`);
-    const error = { source_error: reason, source_message: message };
+    const error = { source_error: reason, source_message: message, portal_url };
     if (saved?.selection === selection && saved.data?.mode === mode && saved.data.feed_state === 'LIVE' &&
         typeof saved.saved_at === 'string' && Number.isFinite(Date.parse(saved.saved_at))) {
       return { ...saved.data, ...error, feed_state: 'STALE', saved_at: saved.saved_at };
@@ -153,7 +156,7 @@ async function run(input) {
   const result = isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries, criticalityFirst);
   const snapshot = { selection, saved_at: new Date().toISOString(), data: result };
   if (Buffer.byteLength(JSON.stringify(snapshot)) <= SAVED_STATE_BYTES) {
-    return { ...result, trmnl_state: snapshot };
+    return { ...result, portal_url, trmnl_state: snapshot };
   }
-  return result;
+  return { ...result, portal_url };
 }

@@ -77,14 +77,19 @@
 
 <div class="layout layout--col layout--stretch gap--none">
   <section class="flex flex--col h--full w--full gap--small lg:gap--medium" aria-label="Nutanix {{ heading }}">
-    <header class="inverse flex flex--row flex--left flex--center-y gap--small w--full px--3 py--2 no-shrink" data-ns-mast>
+    <header class="inverse flex flex--row flex--left flex--center-y gap--small w--full px--3 no-shrink" data-ns-mast>
       <svg viewBox="0 0 256 256" class="w--8 h--8 lg:w--10 lg:h--10 no-shrink" aria-hidden="true">
         <path fill="currentColor" fill-rule="evenodd" d="M27 27H90L128 65L166 27H229V90L191 128L229 166V229H166L128 191L90 229H27V166L65 128L27 90Z M35 35H86L128 77L170 35H221V86L179 128L221 170V221H170L128 179L86 221H35V170L77 128L35 86Z"/>
       </svg>
-      <div class="w--min-0">
+      <div class="grow w--min-0 py--2">
         <div class="label label--base text--bold">NUTANIX{% if current_mode == 'nxvd' %} · NXVD{% endif %}</div>
         <div class="title title--small md:landscape:title--base lg:title--large" role="heading" aria-level="1">{{ heading }}</div>
       </div>
+      {% if portal_url != blank %}
+        <div class="flex flex--col w--16 my--0.5 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
+          {{ portal_url | qr_code: 2, 'l' }}
+        </div>
+      {% endif %}
     </header>
 
     {% if feed_state == 'ERROR' or lead == blank %}
