@@ -90,7 +90,10 @@ RSpec.describe 'Nutanix Security layouts' do
               const frame = document.querySelector('.layout').getBoundingClientRect();
               const mast = document.querySelector('[data-ns-mast]');
               const lead = document.querySelector('[data-ns-lead]')?.getBoundingClientRect();
+              const leadRule = document.querySelector('[data-ns-order]')?.parentElement.getBoundingClientRect();
               const table = document.querySelector('table');
+              const tableBox = table?.getBoundingClientRect();
+              const beside = Boolean(tableBox && lead && tableBox.left >= lead.right - 1);
               const rows = [...document.querySelectorAll('[data-ns-row]')].filter(row => row.getClientRects().length);
               const boxes = [...rows, ...document.querySelectorAll('thead, [data-ns-lead]')]
                 .filter(element => element.getClientRects().length)
@@ -106,7 +109,11 @@ RSpec.describe 'Nutanix Security layouts' do
                 widthOverflow: mast.scrollWidth - mast.clientWidth,
                 clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > frame.bottom + 1 ||
                                           box.left < frame.left - 1 || box.right > frame.right + 1),
-                beside: Boolean(table && lead && table.getBoundingClientRect().left >= lead.right - 1),
+                beside,
+                gutterDifference: rows.length && !beside ? Math.max(
+                  Math.abs(table.querySelector('th .title').getBoundingClientRect().left - leadRule.left),
+                  Math.abs(tableBox.right - leadRule.right)
+                ) : 0,
                 columns: table ? [...table.querySelectorAll('th')].filter(cell => cell.getClientRects().length).length : 0
               };
             })()
@@ -114,6 +121,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['widthOverflow']).to be <= 1
           expect(geometry['clipped']).to be(false)
           expect(geometry['cellOverflow']).to be(false)
+          expect(geometry['gutterDifference']).to be <= 1
           remaining = [count - 1, 0].max
           expect(geometry['rows']).to eq([remaining, row_limits.fetch(device_name)[view_index]].min)
           expect(geometry['renderedRows']).to eq([remaining, row_limits.fetch('x')[view_index]].min)

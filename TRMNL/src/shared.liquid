@@ -126,7 +126,13 @@
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0 {% if view == 'full' %}lg:landscape:col--span-4{% elsif view == 'quadrant' %}hidden lg:block{% endif %}" aria-label="{{ table_heading }}">
+          <section class="w--full w--min-0
+            {% case view %}
+              {% when 'full' %}px--3 lg:px--4 lg:landscape:px--0 lg:landscape:col--span-4
+              {% when 'half_horizontal' %}portrait:px--3 lg:portrait:px--4
+              {% when 'quadrant' %}hidden lg:block lg:px--4
+              {% else %}px--3 lg:px--4
+            {% endcase %}" aria-label="{{ table_heading }}">
             <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}lg:landscape:table--large{% endif %}">
               <thead>
                 <tr>
