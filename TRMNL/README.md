@@ -55,6 +55,8 @@ The public NXVD response has no publication date field. In testing, `DATE`, `PUB
 
 The portal endpoints are undocumented and may change. Empty responses and source errors have separate messages. To diagnose a refresh failure, enable **Debug Logs** in the private plugin settings.
 
+If a refresh fails, the screen can show a dated **Saved** snapshot for the same feed, advisory order, or product. The first successful refresh seeds the snapshot. Each request has a 4.5-second deadline within TRMNL's five-second Serverless budget. [TRMNL Saved State](https://help.trmnl.com/en/articles/16777795-saved-state)
+
 ## Checks
 
 With Node.js 22, Python 3 and Docker installed, run from the repository root:

@@ -29,11 +29,12 @@ const advisory = {
   href: 'https://download.nutanix.com/alerts/Security_Advisory_0061.pdf',
 };
 
-async function refresh(fields, response) {
+async function refresh(fields, response, state) {
   const requests = [];
   const logs = [];
   const run = vm.runInNewContext(transform + '\nrun', {
     AbortSignal,
+    Buffer,
     console: { error: (message) => logs.push(message) },
     fetch: async (url, options) => {
       requests.push({ url, options });
@@ -41,7 +42,7 @@ async function refresh(fields, response) {
       return response;
     },
   });
-  const data = await run({ trmnl: { plugin_settings: { custom_fields_values: fields } } });
+  const data = await run({ trmnl: { plugin_settings: { custom_fields_values: fields }, state } });
   assert.equal(requests.length, 1);
   assert.equal(requests[0].options.redirect, 'error');
   return { data: JSON.parse(JSON.stringify(data)), request: requests[0], logs };
@@ -64,13 +65,15 @@ test('Advisories default to one GET and keep only fields used by the table or fe
   assert.equal(request.url, advisoryUrl);
   assert.equal(request.options.method ?? 'GET', 'GET');
   assert.equal(request.options.body, undefined);
-  assert.deepEqual(data, {
+  const { trmnl_state: saved, ...display } = data;
+  assert.deepEqual(display, {
     mode: 'advisories', feed_state: 'LIVE',
     content: { criticality_first: false, body: [
       { advisoryNumber: '61', criticality: 'High', date: 'November 18, 2026', summary: 'Security update available' },
       { advisoryNumber: '62', criticality: 'High', date: 'November 19, 2026', summary: 'Security update available', affectedVersions: 'AHV' },
     ] },
   });
+  assert.deepEqual(saved.data, display);
 });
 
 test('Advisory order ranks criticality first and breaks ties by publication date', async () => {
@@ -195,13 +198,72 @@ test('valid empty responses and pages with only pending releases remain unknown'
   assert.equal(data.feed_state, 'EMPTY');
 });
 
+const timeout = Object.assign(new Error('PRIVATE'), { name: 'TimeoutError' });
+
+test('Both feeds show a matching saved snapshot after a timeout and update it after recovery', async () => {
+  for (const [fields, response, dataKey] of [
+    [{ table_type: 'nxvd', nxvd_product: 'aos' }, nxvd([vulnerability]), 'nxvd'],
+    [{ advisory_sort: 'criticality' }, json({ content: { body: [advisory] } }), 'content'],
+  ]) {
+    const first = await refresh(fields, response);
+    const saved = first.data.trmnl_state;
+    assert.ok(Number.isFinite(Date.parse(saved.saved_at)));
+    assert.ok(Buffer.byteLength(JSON.stringify(saved)) <= 8192);
+
+    const failed = await refresh(fields, timeout, saved);
+    assert.equal(failed.data.feed_state, 'STALE');
+    assert.equal(failed.data.source_error, 'TIMEOUT');
+    assert.equal(failed.data.saved_at, saved.saved_at);
+    assert.deepEqual(failed.data[dataKey], first.data[dataKey]);
+    assert.equal(failed.data.trmnl_state, undefined);
+    assert.doesNotMatch(JSON.stringify(failed.data), /PRIVATE/);
+
+    const recovered = await refresh(fields, response, saved);
+    assert.equal(recovered.data.feed_state, 'LIVE');
+    assert.equal(recovered.data.saved_at, undefined);
+    assert.equal(recovered.data.trmnl_state.selection, saved.selection);
+  }
+});
+
+test('A timeout only reuses state for the selected feed, product, and advisory order', async () => {
+  const aos = await refresh({ table_type: 'nxvd', nxvd_product: 'aos' }, nxvd([vulnerability]));
+  const latest = await refresh({}, json({ content: { body: [advisory] } }));
+  for (const [fields, state] of [
+    [{ table_type: 'nxvd' }, aos.data.trmnl_state],
+    [{ table_type: 'nxvd', nxvd_product: 'ahv' }, aos.data.trmnl_state],
+    [{ table_type: 'advisories' }, aos.data.trmnl_state],
+    [{ advisory_sort: 'criticality' }, latest.data.trmnl_state],
+  ]) {
+    const failed = await refresh(fields, timeout, state);
+    assert.equal(failed.data.feed_state, 'ERROR');
+    assert.equal(failed.data.saved_at, undefined);
+  }
+});
+
+test('A successful empty refresh replaces the previous snapshot', async () => {
+  const fields = { table_type: 'nxvd' };
+  const first = await refresh(fields, nxvd([vulnerability]));
+  const empty = await refresh(fields, nxvd([]), first.data.trmnl_state);
+  assert.equal(empty.data.trmnl_state.data.feed_state, 'EMPTY');
+  const failed = await refresh(fields, timeout, empty.data.trmnl_state);
+  assert.equal(failed.data.feed_state, 'ERROR');
+});
+
+test('A snapshot above the UTF-8 storage limit keeps the live result and skips the state write', async () => {
+  const response = json({ content: { body: [{ ...advisory, summary: 'á'.repeat(4200) }] } });
+  const { data } = await refresh({}, response);
+  assert.equal(data.feed_state, 'LIVE');
+  assert.equal(data.content.body[0].summary.length, 4200);
+  assert.equal(data.trmnl_state, undefined);
+});
+
 const errors = [
   ['HTTP 503', { ok: false, status: 503 }],
   ['INVALID JSON', { ok: true, json: async () => { throw new SyntaxError('PRIVATE'); } }],
   ['UNEXPECTED DATA', json({ vulnerabilities: [null] })],
   ['UNEXPECTED DATA', json({ wrong_shape: 'PRIVATE' })],
   ['NETWORK ERROR', new TypeError('PRIVATE')],
-  ['TIMEOUT', Object.assign(new Error('PRIVATE'), { name: 'TimeoutError' })],
+  ['TIMEOUT', timeout],
 ];
 
 for (const [index, [reason, response]] of errors.entries()) {

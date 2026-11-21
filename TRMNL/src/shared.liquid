@@ -34,6 +34,9 @@
   {% assign lead_label = 'By CVSS' %}
   {% assign table_heading = 'Released fixes' %}
 {% endif %}
+{% if feed_state == 'STALE' %}
+  {% assign lead_label = saved_at | date: '%Y-%m-%d' | prepend: 'Saved ' %}
+{% endif %}
 {% assign lead = records.first %}
 {% comment %}Bound the markup before paint. Large and portrait screens show extra rows with framework classes.{% endcomment %}
 {% assign compact = false %}

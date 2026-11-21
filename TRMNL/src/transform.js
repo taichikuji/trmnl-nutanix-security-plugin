@@ -2,6 +2,7 @@
 const SOURCE = 'https://portal.nutanix.com';
 const TIMEOUT_MS = 4500;
 const PAGE_SIZE = 20;
+const SAVED_STATE_BYTES = 8192;
 // The largest view uses one featured item and ten table rows.
 const DISPLAY_LIMIT = 11;
 const ADVISORY_CRITICALITY = ['informational', 'low', 'medium', 'high', 'critical'];
@@ -86,18 +87,25 @@ function vulnerabilityData(entries, product) {
   };
 }
 
-function sourceFailure(mode, reason, message, startedAt) {
-  console.error(`Nutanix ${mode}: ${reason} after ${Date.now() - startedAt}ms`);
-  return { mode, feed_state: 'ERROR', source_error: reason, source_message: message };
-}
-
 async function run(input) {
   const fields = input?.trmnl?.plugin_settings?.custom_fields_values;
   const mode = fields?.table_type === 'nxvd' ? 'nxvd' : 'advisories';
   const isNxvd = mode === 'nxvd';
   const product = PRODUCTS.get(fields?.nxvd_product);
+  const criticalityFirst = fields?.advisory_sort === 'criticality';
+  const selection = isNxvd ? `nxvd:${product ?? 'all'}` : `advisories:${criticalityFirst ? 'criticality' : 'latest'}`;
+  const saved = input?.trmnl?.state;
   const url = SOURCE + (isNxvd ? '/api/v1/vulnerabilities' : '/api/v1/pages/securityAdvisories');
   const startedAt = Date.now();
+  const sourceFailure = (reason, message) => {
+    console.error(`Nutanix ${mode}: ${reason} after ${Date.now() - startedAt}ms`);
+    const error = { source_error: reason, source_message: message };
+    if (saved?.selection === selection && saved.data?.mode === mode && saved.data.feed_state === 'LIVE' &&
+        typeof saved.saved_at === 'string' && Number.isFinite(Date.parse(saved.saved_at))) {
+      return { ...saved.data, ...error, feed_state: 'STALE', saved_at: saved.saved_at };
+    }
+    return { mode, ...error, feed_state: 'ERROR' };
+  };
   const signal = AbortSignal.timeout(TIMEOUT_MS);
   const options = { signal, redirect: 'error' };
   if (isNxvd) {
@@ -121,17 +129,17 @@ async function run(input) {
   try {
     const response = await fetch(url, options);
     if (!response.ok) {
-      return sourceFailure(mode, `HTTP ${response.status}`, `Nutanix returned HTTP ${response.status}.`, startedAt);
+      return sourceFailure(`HTTP ${response.status}`, `Nutanix returned HTTP ${response.status}.`);
     }
     data = await response.json();
   } catch (error) {
     if (signal.aborted || ['TimeoutError', 'AbortError'].includes(error?.name)) {
-      return sourceFailure(mode, 'TIMEOUT', 'Nutanix did not respond within 4.5 seconds.', startedAt);
+      return sourceFailure('TIMEOUT', 'Nutanix did not respond within 4.5 seconds.');
     }
     if (error?.name === 'SyntaxError') {
-      return sourceFailure(mode, 'INVALID JSON', 'Nutanix returned an unreadable response.', startedAt);
+      return sourceFailure('INVALID JSON', 'Nutanix returned an unreadable response.');
     }
-    return sourceFailure(mode, 'NETWORK ERROR', 'Could not reach the Nutanix source.', startedAt);
+    return sourceFailure('NETWORK ERROR', 'Could not reach the Nutanix source.');
   }
 
   const entries = isNxvd ? data?.vulnerabilities : data?.content?.body;
@@ -139,7 +147,13 @@ async function run(input) {
     ? (entry) => typeof entry?.status === 'string' && typeof entry.productName === 'string'
     : (entry) => Boolean(text(entry?.advisoryNumber));
   if (!Array.isArray(entries) || !entries.every(validEntry)) {
-    return sourceFailure(mode, 'UNEXPECTED DATA', 'The Nutanix response format changed.', startedAt);
+    return sourceFailure('UNEXPECTED DATA', 'The Nutanix response format changed.');
   }
-  return isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries, fields?.advisory_sort === 'criticality');
+
+  const result = isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries, criticalityFirst);
+  const snapshot = { selection, saved_at: new Date().toISOString(), data: result };
+  if (Buffer.byteLength(JSON.stringify(snapshot)) <= SAVED_STATE_BYTES) {
+    return { ...result, trmnl_state: snapshot };
+  }
+  return result;
 }

@@ -167,4 +167,34 @@ RSpec.describe 'Nutanix Security layouts' do
       expect(settled.evaluate(geometry)).to eq(before)
     end
   end
+
+  [
+    ['nxvd', 'og', 'full', { delay: 4.7, status: 503 }, 'TIMEOUT'],
+    ['nxvd', 'x', 'quadrant', { status: 503 }, 'HTTP 503'],
+    ['advisories-criticality', 'og-portrait', 'half_vertical', { status: 503 }, 'HTTP 503']
+  ].each do |scenario, device_name, view, failure, reason|
+    it "shows dated saved #{scenario} on #{device_name} #{view} after #{reason}" do
+      mode, mocks, label, _, advisory_sort = cases.fetch(scenario)
+      fields = { table_type: mode, nxvd_product: 'aos', advisory_sort: advisory_sort }
+      live = trmnl.transform(custom_fields: fields, mocks: mocks, now: '2026-11-20T15:30:00Z')
+      expect(live.error).to be_nil
+      expect(live.state.fetch('saved_at')).to start_with('2026-11-20T15:30:')
+
+      screen = trmnl.render(view: view, device: devices.fetch(device_name), custom_fields: fields,
+                            mocks: { mocks.keys.first => failure }, state: live.state)
+      expect(screen).to have_no_transform_error
+      expect(screen).to have_text('Saved 2026-11-20')
+      expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label)
+      expect(screen.result.data.fetch('source_error')).to eq(reason)
+      expect(screen.result.state).to eq(live.state)
+      expect(screen.result.requests.size).to eq(1)
+      expect(screen.evaluate(<<~JS)).to eq(true)
+        [...document.querySelectorAll('[data-ns-lead], [data-ns-row]')].every(element =>
+          element.getBoundingClientRect().bottom <= document.querySelector('.layout').getBoundingClientRect().bottom + 1)
+      JS
+
+      FileUtils.mkdir_p('_build/previews')
+      File.binwrite("_build/previews/saved-#{scenario}-#{device_name}-#{view}.png", screen.png_bytes)
+    end
+  end
 end
