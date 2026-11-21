@@ -64,7 +64,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.has_css?('[data-ns-mast] svg.qr-code')).to eq(view == 'full')
           if view == 'full'
             expect(screen).to have_qr_code(screen.result.data.fetch('portal_url'))
-            width = device_name.start_with?('x') ? 133.2 : (mode == 'nxvd' ? 68 : 56)
+            width = device_name.start_with?('x') ? 133.2 : 68
             expect(screen.box('[data-ns-mast] svg.qr-code').width).to be_within(0.1).of(width)
           end
           expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
@@ -108,7 +108,12 @@ RSpec.describe 'Nutanix Security layouts' do
                 if (!element.getClientRects().length) return false;
                 return element.getBoundingClientRect().right > element.closest('td').getBoundingClientRect().right + 1;
               }));
+              const fontSizes = new Set(Array.from(table?.querySelectorAll('th > span, td > div, td > span') ?? [])
+                .filter(element => element.getClientRects().length)
+                .map(element => getComputedStyle(element).fontSize));
               return {
+                tableFontSizes: fontSizes.size,
+                stackedMetadata: Boolean(rows[0]?.querySelector('td:first-child > :nth-child(2)')?.getClientRects().length),
                 rows: rows.length,
                 renderedRows: document.querySelectorAll('[data-ns-row]').length,
                 cellOverflow,
@@ -117,7 +122,7 @@ RSpec.describe 'Nutanix Security layouts' do
                                           box.left < frame.left - 1 || box.right > frame.right + 1),
                 beside,
                 gutterDifference: rows.length && !beside ? Math.max(
-                  Math.abs(table.querySelector('th .title').getBoundingClientRect().left - leadRule.left),
+                  Math.abs(table.querySelector('th .label').getBoundingClientRect().left - leadRule.left),
                   Math.abs(tableBox.right - leadRule.right)
                 ) : 0,
                 columns: table ? [...table.querySelectorAll('th')].filter(cell => cell.getClientRects().length).length : 0
@@ -127,10 +132,14 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['widthOverflow']).to be <= 1
           expect(geometry['clipped']).to be(false)
           expect(geometry['cellOverflow']).to be(false)
+          expect(geometry['tableFontSizes']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
           remaining = [count - 1, 0].max
           expect(geometry['rows']).to eq([remaining, row_limits.fetch(device_name)[view_index]].min)
           expect(geometry['renderedRows']).to eq([remaining, row_limits.fetch('x')[view_index]].min)
+          if count > 1 && view == 'full'
+            expect(geometry['stackedMetadata']).to eq(device_name == 'og-portrait')
+          end
           if count > 1 && view == 'full' && %w[og x].include?(device_name)
             expect(geometry['beside']).to be(false)
             expect(geometry['columns']).to eq(device_name == 'x' ? 4 : 3)

@@ -45,9 +45,11 @@
 {% assign portrait_rows = 8 %}
 {% assign score_visibility = 'hidden lg:inline' %}
 {% assign severity_width = 'w--24 lg:w--32' %}
-{% if view == 'full' and current_mode == 'nxvd' %}
-  {% assign score_visibility = 'inline' %}
+{% if view == 'full' %}
   {% assign severity_width = 'w--32' %}
+  {% if current_mode == 'nxvd' %}
+    {% assign score_visibility = 'inline' %}
+  {% endif %}
 {% endif %}
 {% case view %}
   {% when 'half_horizontal' %}
@@ -85,8 +87,7 @@
         <div class="title title--base lg:title--large text--bold" role="heading" aria-level="1">{{ heading }}</div>
       </div>
       {% if portal_url != blank and view == 'full' %}
-        {% comment %}Match ARC Raiders sizing. The denser NXVD code needs 68px on OG to scan.{% endcomment %}
-        <div class="flex no-shrink {% if current_mode == 'nxvd' %}w--[68px]{% else %}w--[56px]{% endif %} lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
+        <div class="flex no-shrink w--[68px] lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
           {{ portal_url | qr_code: 3, 'l' }}
         </div>
       {% endif %}
@@ -139,17 +140,17 @@
             <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}lg:portrait:table--large{% endif %}">
               <thead>
                 <tr>
-                  <th scope="col"><span class="title title--small">{{ table_heading }}</span></th>
+                  <th scope="col"><span class="label label--base text--bold">{{ table_heading }}</span></th>
                   {% if view == 'full' %}
                     <th scope="col" class="hidden landscape:table-cell lg:table-cell w--28 lg:w--36">
                       <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product{% else %}Published{% endif %}</span>
                     </th>
-                    <th scope="col" class="hidden lg:landscape:table-cell {% if current_mode == 'nxvd' %}w--48{% else %}w--20{% endif %}">
+                    <th scope="col" class="hidden lg:landscape:table-cell w--48">
                       <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Fixed in{% else %}SA #{% endif %}</span>
                     </th>
                   {% endif %}
                   <th scope="col" class="text--right {{ severity_width }}">
-                    <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}<span class="{{ score_visibility }}">CVSS · </span>{% endif %}Severity</span>
+                    <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}<span class="{{ score_visibility }}">CVSS&nbsp;·&nbsp;</span>{% endif %}Severity</span>
                   </th>
                 </tr>
               </thead>
@@ -157,23 +158,23 @@
                 {% for entry in records offset: 1 limit: row_limit %}
                   <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}lg:table-row"{% endif %}>
                     <td>
-                      <div class="title {% if compact %}title--small{% else %}title--base{% if view == 'full' %} lg:landscape:title--large{% endif %}{% endif %} text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
+                      <div class="label label--base block pr--2 text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
                       {% unless compact %}
-                        <div class="description description--large nutanix-line {% if view == 'full' %}landscape:hidden lg:hidden{% endif %}">
+                        <div class="label label--base block pr--2 nutanix-line {% if view == 'full' %}landscape:hidden lg:hidden{% endif %}">
                           {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
                         </div>
                       {% endunless %}
                     </td>
                     {% if view == 'full' %}
                       <td class="hidden landscape:table-cell lg:table-cell">
-                        <div class="label label--base nutanix-line">
+                        <div class="label label--base block pr--2 nutanix-line">
                           {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
                         </div>
                       </td>
                       {% if current_mode == 'nxvd' %}
-                        <td class="hidden lg:landscape:table-cell"><div class="label label--base nutanix-line">{{ entry.fixed | default: '—' | escape }}</div></td>
+                        <td class="hidden lg:landscape:table-cell"><div class="label label--base block pr--2 nutanix-line">{{ entry.fixed | default: '—' | escape }}</div></td>
                       {% else %}
-                        <td class="hidden lg:landscape:table-cell"><div class="label label--base nutanix-line">{{ entry.advisoryNumber | escape }}</div></td>
+                        <td class="hidden lg:landscape:table-cell"><div class="label label--base block pr--2 nutanix-line">{{ entry.advisoryNumber | escape }}</div></td>
                       {% endif %}
                     {% endif %}
                     <td class="text--right">
