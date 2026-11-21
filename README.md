@@ -14,7 +14,7 @@ Captured from the Nutanix portal on November 21, 2026. [All layout previews](TRM
 
 | Setting | Options |
 | --- | --- |
-| Table to display | Security Advisories (default) or Vulnerability Fixes (CVE) |
+| Table to display | Security Advisories (default) or Vulnerability Fixes |
 | Advisory order | Latest first (default) or Highest criticality first |
 | Product (NXVD) | All products (default), AOS, AHV, Prism, Files, NDB, WitnessVM or Witness Service |
 

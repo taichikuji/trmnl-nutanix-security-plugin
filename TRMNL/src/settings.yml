@@ -1,7 +1,7 @@
 ---
 name: Nutanix Security
 # Short descriptions for TRMNL's private plugin editor.
-description: Security advisories for Nutanix
+description: Nutanix security advisories & CVEs
 icon: media/icon.svg
 strategy: polling
 # Polling without a URL allows Serverless to perform exactly one selected API request.
@@ -20,7 +20,7 @@ custom_fields:
     indexable: true
     options:
       - 'Security Advisories': advisories
-      - 'Vulnerability Fixes (CVE)': nxvd
+      - 'Vulnerability Fixes': nxvd
     default: advisories
     description: Select Nutanix data source
     conditional_validation:
@@ -60,11 +60,12 @@ custom_fields:
       Follow Nutanix security advisories on your TRMNL. See what Nutanix has published,
       how serious it is, and which software versions an advisory lists as affected.
       <br/><br/> Choose Security Advisories to see new notices or put the most critical
-      ones first. Choose Vulnerability Fixes for a selection of released CVE fixes from
-      the Nutanix Vulnerability Database (NXVD), ranked by CVSS. You can filter those
-      fixes by product to focus on AOS, AHV, Prism, Files, NDB, or Witness.
+      ones first. Choose Vulnerability Fixes to use the plugin as a Nutanix CVE tracker.
+      It shows a selection of released fixes from the Nutanix Vulnerability Database
+      (NXVD), ranked by CVSS. Filter by product to focus on AOS, AHV, Prism, Files,
+      NDB, or Witness.
       <br/><br/> Nutanix publishes the data. This independent plugin was created by
       Ivan Perez and requires no API key or access to your cluster. See which advisories
       and fixes are worth reviewing before your next patch window.
-    github_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin
-    learn_more_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin/tree/main/TRMNL#setup
+    github_url: https://github.com/taichikuji/trmnl-nutanix-security-plugin
+    learn_more_url: https://github.com/taichikuji/trmnl-nutanix-security-plugin/tree/main/TRMNL#setup
