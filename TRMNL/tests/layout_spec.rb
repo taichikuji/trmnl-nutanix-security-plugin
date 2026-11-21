@@ -62,7 +62,11 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen).to have_no_css('.title_bar')
           expect(screen).to have_no_css('.layout a')
           expect(screen.has_css?('[data-ns-mast] svg.qr-code')).to eq(view == 'full')
-          expect(screen).to have_qr_code(screen.result.data.fetch('portal_url')) if view == 'full'
+          if view == 'full'
+            expect(screen).to have_qr_code(screen.result.data.fetch('portal_url'))
+            width = device_name.start_with?('x') ? 133.2 : (mode == 'nxvd' ? 68 : 56)
+            expect(screen.box('[data-ns-mast] svg.qr-code').width).to be_within(0.1).of(width)
+          end
           expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?

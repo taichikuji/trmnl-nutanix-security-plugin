@@ -65,7 +65,6 @@
 {% endcase %}
 
 <style>
-  .screen:not(.screen--lg) .nutanix-qr .qr-code { width: 82px; }
   .nutanix-table { table-layout: fixed; }
   .nutanix-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nutanix-headline {
@@ -86,8 +85,9 @@
         <div class="title title--base lg:title--large text--bold" role="heading" aria-level="1">{{ heading }}</div>
       </div>
       {% if portal_url != blank and view == 'full' %}
-        <div class="flex flex--col nutanix-qr lg:w--12 no-shrink" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
-          {{ portal_url | qr_code: 2, 'l' }}
+        {% comment %}Match ARC Raiders sizing. The denser NXVD code needs 68px on OG to scan.{% endcomment %}
+        <div class="flex no-shrink {% if current_mode == 'nxvd' %}w--[68px]{% else %}w--[56px]{% endif %} lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table">
+          {{ portal_url | qr_code: 3, 'l' }}
         </div>
       {% endif %}
     </header>
