@@ -1,7 +1,7 @@
 ---
 name: Nutanix Security
 # Short descriptions for TRMNL's private plugin editor.
-description: Advisories and vulnerability fixes
+description: Security advisories for Nutanix
 icon: media/icon.svg
 strategy: polling
 # Polling without a URL allows Serverless to perform exactly one selected API request.
@@ -17,9 +17,10 @@ custom_fields:
   - keyname: table_type
     name: Table to display
     field_type: select
+    indexable: true
     options:
       - 'Security Advisories': advisories
-      - 'Security Vulnerabilities (NXVD)': nxvd
+      - 'Vulnerability Fixes (CVE)': nxvd
     default: advisories
     description: Select Nutanix data source
     conditional_validation:
@@ -56,9 +57,14 @@ custom_fields:
     field_type: author_bio
     category: programming,news
     description: >-
-      Read the latest Nutanix Security Advisories or review released fixes from the
-      Nutanix Vulnerability Database. Sort advisories by publication date or
-      criticality, or filter fixes by product. This independent plugin uses public
-      Nutanix data and refreshes every six hours by default.
+      Follow Nutanix security advisories on your TRMNL. See what Nutanix has published,
+      how serious it is, and which software versions an advisory lists as affected.
+      <br/><br/> Choose Security Advisories to see new notices or put the most critical
+      ones first. Choose Vulnerability Fixes for a selection of released CVE fixes from
+      the Nutanix Vulnerability Database (NXVD), ranked by CVSS. You can filter those
+      fixes by product to focus on AOS, AHV, Prism, Files, NDB, or Witness.
+      <br/><br/> Nutanix publishes the data. This independent plugin was created by
+      Ivan Perez and requires no API key or access to your cluster. See which advisories
+      and fixes are worth reviewing before your next patch window.
     github_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin
-    learn_more_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin/blob/main/TRMNL/README.md#setup
+    learn_more_url: https://github.com/taichikuji/trmnl-nutanix-sec-plugin/tree/main/TRMNL#setup
