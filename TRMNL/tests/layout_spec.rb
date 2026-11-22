@@ -146,7 +146,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['gutterDifference']).to be <= 1
           remaining = (count - 1).clamp(0, 30)
           if view == 'full'
-            budget = { 'og' => 7, 'og-portrait' => 16, 'x' => 14, 'x-portrait' => 22 }.fetch(device_name)
+            budget = { 'og' => 6, 'og-portrait' => 16, 'x' => 14, 'x-portrait' => 22 }.fetch(device_name)
             shown = [remaining, budget].min
             expect(geometry['renderedRows']).to eq(shown)
             expect(geometry['rows']).to eq(shown)

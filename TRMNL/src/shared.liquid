@@ -32,7 +32,7 @@
 {% if feed_state == 'STALE' %}
   {% assign lead_label = saved_at | date: '%Y-%m-%d' | prepend: 'Saved ' %}
 {% endif %}
-{% assign full_row_limit = 7 %}
+{% assign full_row_limit = 6 %}
 {% if device_width >= 1024 %}{% assign full_row_limit = 14 %}{% endif %}
 {% if device_height > device_width %}
   {% if device_width >= 1024 %}{% assign full_row_limit = 22 %}{% else %}{% assign full_row_limit = 16 %}{% endif %}
