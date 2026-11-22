@@ -18,7 +18,7 @@ The listing icon is available at [media/icon.svg](media/icon.svg). Upload it sep
 
 ## Previews
 
-Recorded on November 21, 2026 using public Nutanix data.
+Rendered with public Nutanix data from November 21, 2026.
 
 | Security Advisories | Full | Half horizontal | Half vertical | Quadrant |
 | --- | --- | --- | --- | --- |
@@ -36,9 +36,9 @@ Recorded on November 21, 2026 using public Nutanix data.
 
 The full view on both TRMNL OG and X has a small QR code in the header. It opens the selected table on Nutanix's support portal. NXVD opens with your selected product. The portal uses its own sort order.
 
-The lead item sits in a dark panel above the table. Full landscape views give publication dates or products their own column, and X adds advisory numbers or fixed releases. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
+The full views share a lead panel and three columns. Advisory rows group the publication date and advisory number. NXVD rows group the product and fixed releases. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
-The templates limit the number of rendered rows. In full landscape layouts, the table reveals extra rows when they fit below the featured item. Framework 3.4.6 handles typography, table sizing, and responsive visibility. Text clips in place as the browser lays out the page. The landscape limits below include the featured item.
+Full views show as many rows as fit below the lead, up to the 17-item data limit. The framework handles typography, table sizing, and responsive column widths. Text clips in place on first paint. The landscape limits below include the featured item.
 
 | Layout | OG | X |
 | --- | ---: | ---: |

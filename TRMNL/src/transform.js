@@ -74,16 +74,10 @@ function vulnerabilityData(entries, product) {
       };
     });
 
-  // totalCount and pageCount have both returned the current page's length.
   return {
     mode: 'nxvd',
     feed_state: rows.length ? 'LIVE' : 'EMPTY',
-    nxvd: {
-      total: rows.length,
-      critical: rows.filter((row) => row.severity === 'Critical').length,
-      high: rows.filter((row) => row.severity === 'High').length,
-      rows,
-    },
+    nxvd: { rows },
   };
 }
 
@@ -155,8 +149,9 @@ async function run(input) {
 
   const result = isNxvd ? vulnerabilityData(entries, product) : advisoryData(entries, criticalityFirst);
   const snapshot = { selection, saved_at: new Date().toISOString(), data: result };
+  const output = { ...result, portal_url };
   if (Buffer.byteLength(JSON.stringify(snapshot)) <= SAVED_STATE_BYTES) {
-    return { ...result, portal_url, trmnl_state: snapshot };
+    output.trmnl_state = snapshot;
   }
-  return { ...result, portal_url };
+  return output;
 }

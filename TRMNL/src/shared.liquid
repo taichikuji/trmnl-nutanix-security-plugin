@@ -13,11 +13,6 @@
 {%- endif -%}
 {% endtemplate %}
 
-{% template nutanix_severity %}
-{%- assign severity = value | default: 'Unrated' -%}
-<span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
-{% endtemplate %}
-
 {% template nutanix_table %}
 {% assign current_mode = mode | default: 'advisories' %}
 {% assign records = content.body | reverse %}
@@ -48,16 +43,14 @@
 {% if current_mode == 'nxvd' %}
   {% assign severity_width = 'w--28 lg:w--36' %}
 {% endif %}
-{% if view == 'full' %}
-  {% assign row_limit = 16 %}
-  {% assign portrait_rows = 11 %}
-  {% assign severity_width = 'w--32' %}
-  {% if current_mode == 'nxvd' %}
-    {% assign score_visibility = 'inline' %}
-    {% assign severity_width = 'w--36' %}
-  {% endif %}
-{% endif %}
 {% case view %}
+  {% when 'full' %}
+    {% assign row_limit = 16 %}
+    {% assign severity_width = 'w--32' %}
+    {% if current_mode == 'nxvd' %}
+      {% assign score_visibility = 'inline' %}
+      {% assign severity_width = 'w--36' %}
+    {% endif %}
   {% when 'half_horizontal' %}
     {% assign compact = true %}
     {% assign row_limit = 5 %}
@@ -73,7 +66,7 @@
 <style>
   .nutanix-table { table-layout: fixed; }
   {% if view == 'full' %}
-    .screen:not(.screen--portrait) .nutanix-table-space {
+    .nutanix-table-space {
       container: nutanix-table / size;
       font-size: calc(1px * var(--ui-scale));
     }
@@ -124,45 +117,38 @@
         {% endif %}
       </div>
     {% else %}
-      <div class="flex flex--col w--full {% if view == 'full' %}gap--xsmall lg:gap--small landscape:grow{% else %}gap--small{% endif %} h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
+      <div class="flex flex--col w--full {% if view == 'full' %}gap--xsmall lg:gap--small grow{% else %}gap--small{% endif %} h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
         <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--1 lg:py--3 no-shrink{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
           <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall w--full">
             <span class="label label--base lg:label--large text--bold" data-ns-order>{{ lead_label }}</span>
             <span class="label label--base label--outline">{{ lead.severity | default: lead.criticality | default: 'Unrated' | escape }}</span>
           </div>
           <div class="title {% if view == 'full' %}title--xlarge lg:title--xxlarge{% elsif view == 'quadrant' %}title--base lg:title--large{% else %}title--large{% endif %} text--bold nutanix-headline my--1 w--full" data-ns-subject role="heading" aria-level="2">{% render 'nutanix_subject', entry: lead, mode: current_mode %}</div>
-          {% if current_mode == 'nxvd' %}
-            <div class="description description--large nutanix-line w--full">
+          <div class="description description--large nutanix-line w--full">
+            {% if current_mode == 'nxvd' %}
               {% if lead.cvss != blank %}<strong>CVSS <span data-ns-score>{{ lead.cvss | escape }}</span></strong> · {% endif %}
               {{ lead.product | escape }}{% if lead.package != blank %} · {{ lead.package | escape }}{% endif %}
-              {% if view == 'full' and lead.fixed != blank %} · <strong>Fixed in</strong> {{ lead.fixed | escape }}{% endif %}
-            </div>
-            {% if view != 'full' and lead.fixed != blank %}
-              <div class="description description--large nutanix-line w--full"><strong>Fixed in</strong> {{ lead.fixed | escape }}</div>
-            {% endif %}
-          {% else %}
-            <div class="description description--large nutanix-line w--full">
+              {% if lead.fixed != blank %}
+                <span{% if view != 'full' %} class="block nutanix-line"{% endif %}>{% if view == 'full' %}· {% endif %}<strong>Fixed in</strong> {{ lead.fixed | escape }}</span>
+              {% endif %}
+            {% else %}
               {% if lead.date != blank %}<strong>{{ lead.date | date: '%b %-d, %Y' | escape }}</strong> · {% endif %}SA #{{ lead.advisoryNumber | escape }}
-              {% if view == 'full' and lead.affectedVersions != blank %} · Affects {{ lead.affectedVersions | escape }}{% endif %}
-            </div>
-            {% if view != 'full' and lead.affectedVersions != blank %}
-              <div class="description description--large nutanix-line w--full">Affects {{ lead.affectedVersions | escape }}</div>
+              {% if lead.affectedVersions != blank %}
+                <span{% if view != 'full' %} class="block nutanix-line"{% endif %}>{% if view == 'full' %}· {% endif %}Affects {{ lead.affectedVersions | escape }}</span>
+              {% endif %}
             {% endif %}
-          {% endif %}
+          </div>
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'full' %}landscape:grow landscape:basis--0 landscape:h--min-0 nutanix-table-space{% endif %}" aria-label="{{ table_heading }}">
-            <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}landscape:table--small lg:portrait:table--large{% endif %}">
+          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'full' %}grow basis--0 h--min-0 nutanix-table-space{% endif %}" aria-label="{{ table_heading }}">
+            <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}">
               <thead>
                 <tr>
                   <th scope="col"><span class="label label--base text--bold">{{ table_heading }}</span></th>
                   {% if view == 'full' %}
-                    <th scope="col" class="hidden landscape:table-cell lg:table-cell w--28 lg:w--36">
-                      <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product{% else %}Published{% endif %}</span>
-                    </th>
-                    <th scope="col" class="hidden lg:landscape:table-cell w--48">
-                      <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Fixed in{% else %}SA #{% endif %}</span>
+                    <th scope="col" class="{% if current_mode == 'nxvd' %}w--28 landscape:w--48 lg:w--64 lg:landscape:w--72{% else %}w--32 landscape:w--40 lg:w--48{% endif %}">
+                      <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product / fix{% else %}Published{% endif %}</span>
                     </th>
                   {% endif %}
                   <th scope="col" class="text--right {{ severity_width }}">
@@ -172,36 +158,34 @@
               </thead>
               <tbody>
                 {% for entry in records offset: 1 limit: row_limit %}
-                  <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}{% if view != 'full' or forloop.index <= 12 %}lg:table-row{% endif %}"{% endif %}>
+                  {% assign severity = entry.severity | default: entry.criticality | default: 'Unrated' %}
+                  {% assign details = entry.product %}
+                  {% assign detail_suffix = entry.fixed %}
+                  {% unless current_mode == 'nxvd' %}
+                    {% assign details = entry.date | date: '%b %-d, %Y' %}
+                    {% assign detail_suffix = entry.advisoryNumber | prepend: '#' %}
+                  {% endunless %}
+                  <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden{% unless view == 'full' %} {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}lg:table-row{% endunless %}"{% endif %}>
                     <td>
                       <div class="label label--base block pr--2 text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
-                      {% unless compact %}
-                        <div class="label label--base block pr--2 nutanix-line {% if view == 'full' %}landscape:hidden lg:hidden{% endif %}">
-                          {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
+                      {% if view == 'half_vertical' %}
+                        <div class="label label--base block pr--2 nutanix-line">
+                          {{ details | escape }}
                         </div>
-                      {% endunless %}
+                      {% endif %}
                     </td>
                     {% if view == 'full' %}
-                      <td class="hidden landscape:table-cell lg:table-cell">
+                      <td>
                         <div class="label label--base block pr--2 nutanix-line">
-                          {% if current_mode == 'nxvd' %}{{ entry.product | escape }}{% else %}{{ entry.date | date: '%b %-d, %Y' | escape }}{% endif %}
+                          {{ details | escape }}{% if detail_suffix != blank %}{% if details != blank %} · {% endif %}{{ detail_suffix | escape }}{% endif %}
                         </div>
                       </td>
-                      {% if current_mode == 'nxvd' %}
-                        <td class="hidden lg:landscape:table-cell"><div class="label label--base block pr--2 nutanix-line">{{ entry.fixed | default: '—' | escape }}</div></td>
-                      {% else %}
-                        <td class="hidden lg:landscape:table-cell"><div class="label label--base block pr--2 nutanix-line">{{ entry.advisoryNumber | escape }}</div></td>
-                      {% endif %}
                     {% endif %}
                     <td class="text--right">
-                      {% if current_mode == 'nxvd' %}
-                        <div class="label label--base flex flex--row flex--right flex--center-y gap--xsmall">
-                          {% if entry.cvss != blank %}<span class="label label--base text--bold no-shrink {{ score_visibility }}">{{ entry.cvss | escape }}</span>{% endif %}
-                          {% render 'nutanix_severity', value: entry.severity %}
-                        </div>
-                      {% else %}
-                        {% render 'nutanix_severity', value: entry.criticality %}
-                      {% endif %}
+                      <div class="label label--base flex flex--row flex--right flex--center-y gap--xsmall">
+                        {% if current_mode == 'nxvd' and entry.cvss != blank %}<span class="label label--base text--bold no-shrink {{ score_visibility }}">{{ entry.cvss | escape }}</span>{% endif %}
+                        <span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
+                      </div>
                     </td>
                   </tr>
                 {% endfor %}

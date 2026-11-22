@@ -111,12 +111,10 @@ test('NXVD requests one 20-row CVSS page instead of exporting the feed', async (
   assert.equal(request.options.headers.Referer, portal + '/');
   assert.deepEqual(JSON.parse(request.options.body), expectedPage);
   assert.equal(data.feed_state, 'LIVE');
-  assert.equal(data.nxvd.total, 1);
-  assert.equal(data.nxvd.critical, 1);
-  assert.deepEqual(data.nxvd.rows[0], {
+  assert.deepEqual(data.nxvd, { rows: [{
     cesa: vulnerability.cesa, cve: 'CVE-2026-1000', product: 'AOS', severity: 'Critical',
     cvss: '9.8', package: 'openssl', fixed: 'aos.7.6',
-  });
+  }] });
 });
 
 test('Advisories keep only the leading 17 items after sorting', async () => {
@@ -150,7 +148,7 @@ test('NXVD maps every saved product option to the portal product array', async (
     assert.deepEqual(JSON.parse(result.request.options.body), { ...expectedPage, product: [productName] });
     assert.equal(result.data.portal_url,
       portal + '/page/security/security-vulnerabilities/list?softwareType=' + encodeURIComponent(productName));
-    assert.equal(result.data.nxvd.total, 1);
+    assert.equal(result.data.nxvd.rows.length, 1);
     assert.equal(result.data.nxvd.rows[0].product, productName);
   }
 });
@@ -163,19 +161,15 @@ test('All and unknown products use the same unfiltered request', async () => {
   }
 });
 
-test('NXVD counts retained rows, preserves the response order, and caps oversized pages', async () => {
+test('NXVD preserves the response order and caps oversized pages', async () => {
   const rows = Array.from({ length: 25 }, (_, i) => ({
     ...vulnerability,
     cesa: String(i),
-    severity: i < 10 ? 'Critical' : 'High',
     status: i < 2 ? 'Pending Release' : 'Released',
     jira: 'PRIVATE-123',
     docUrl: 'https://private.example',
   }));
   const { data } = await refresh({ table_type: 'nxvd' }, nxvd(rows, 3000));
-  assert.equal(data.nxvd.total, 17);
-  assert.equal(data.nxvd.critical, 8);
-  assert.equal(data.nxvd.high, 9);
   assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 19).map((row) => row.cesa));
   assert.doesNotMatch(JSON.stringify(data), /PRIVATE|private\.example|jira|docUrl/);
 });
@@ -213,12 +207,13 @@ test('Both feeds show a matching saved snapshot after a timeout and update it af
     const saved = first.data.trmnl_state;
     assert.ok(Number.isFinite(Date.parse(saved.saved_at)));
     assert.ok(Buffer.byteLength(JSON.stringify(saved)) <= 8192);
+    if (dataKey === 'nxvd') Object.assign(saved.data.nxvd, { total: 1, critical: 1, high: 0 });
 
     const failed = await refresh(fields, timeout, saved);
     assert.equal(failed.data.feed_state, 'STALE');
     assert.equal(failed.data.source_error, 'TIMEOUT');
     assert.equal(failed.data.saved_at, saved.saved_at);
-    assert.deepEqual(failed.data[dataKey], first.data[dataKey]);
+    assert.deepEqual(failed.data[dataKey], saved.data[dataKey]);
     assert.equal(failed.data.portal_url, first.data.portal_url);
     assert.equal(failed.data.trmnl_state, undefined);
     assert.doesNotMatch(JSON.stringify(failed.data), /PRIVATE/);

@@ -44,9 +44,9 @@ RSpec.describe 'Nutanix Security layouts' do
   views = %w[full half_horizontal half_vertical quadrant]
   row_limits = {
     'og' => [6, 3, 4, 0],
-    'og-portrait' => [11, 3, 8, 0],
+    'og-portrait' => [16, 3, 8, 0],
     'x' => [15, 5, 9, 2],
-    'x-portrait' => [12, 5, 9, 2]
+    'x-portrait' => [16, 5, 9, 2]
   }
 
   cases.each do |scenario, (mode, mocks, label, count, advisory_sort)|
@@ -149,11 +149,9 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['rows']).to eq([remaining, visible_limit].min)
           expect(geometry['renderedRows']).to eq([remaining, markup_limit].min)
           if count > 1 && view == 'full'
-            expect(geometry['stackedMetadata']).to eq(device_name == 'og-portrait')
-          end
-          if count > 1 && view == 'full' && %w[og x].include?(device_name)
+            expect(geometry['stackedMetadata']).to be(false)
             expect(geometry['beside']).to be(false)
-            expect(geometry['columns']).to eq(device_name == 'x' ? 4 : 3)
+            expect(geometry['columns']).to eq(3)
           end
 
           FileUtils.mkdir_p('_build/previews')
