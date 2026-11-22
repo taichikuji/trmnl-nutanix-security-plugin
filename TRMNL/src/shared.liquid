@@ -33,8 +33,8 @@
   {% assign lead_label = saved_at | date: '%Y-%m-%d' | prepend: 'Saved ' %}
 {% endif %}
 {% assign full_row_limit = 6 %}
-{% if trmnl.device.width >= 1024 %}{% assign full_row_limit = 8 %}{% endif %}
-{% if trmnl.device.width >= 1024 and trmnl.device.height > trmnl.device.width %}
+{% if device_width >= 1024 %}{% assign full_row_limit = 8 %}{% endif %}
+{% if device_width >= 1024 and device_height > device_width %}
   {% assign full_row_limit = 11 %}
 {% endif %}
 {% assign row_limit = 30 %}
@@ -181,13 +181,13 @@
       </div>
     {% endif %}
     {% if view == 'full' %}
-      <div class="flex flex--row flex--right flex--center-y gap--small w--full px--3 lg:px--4 pb--1 no-shrink" data-ns-footer>
+      <div class="flex flex--row flex--right flex--center-y gap--small w--full pl--3 lg:pl--4 pr--1.5 pb--1 no-shrink" data-ns-footer>
         {% if full_more > 0 %}
           <span class="label label--base lg:label--large" data-ns-more>+{{ full_more }} more</span>
         {% endif %}
         {% if portal_url != blank %}
-          <div class="flex no-shrink w--[56px] lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table" data-ns-qr>
-            {{ portal_url | qr_code: 3, 'm' }}
+          <div class="flex no-shrink w--[68px] lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table" data-ns-qr>
+            {{ portal_url | qr_code: 3, 'l' }}
           </div>
         {% endif %}
       </div>

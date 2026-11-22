@@ -60,7 +60,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
           if view == 'full'
             expect(screen).to have_qr_code(screen.result.data.fetch('portal_url'))
-            width = device_name.start_with?('x') ? 133.2 : 56
+            width = device_name.start_with?('x') ? 133.2 : 68
             expect(screen.box('[data-ns-qr] svg.qr-code').width).to be_within(0.1).of(width)
           end
           expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 && view != 'full' ? 1 : 0)
