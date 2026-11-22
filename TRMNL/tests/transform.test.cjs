@@ -7,7 +7,7 @@ const transform = readFileSync(require.resolve('../src/transform.js'), 'utf8');
 const portal = 'https://portal.nutanix.com';
 const nxvdUrl = portal + '/api/v1/vulnerabilities';
 const advisoryUrl = portal + '/api/v1/pages/securityAdvisories';
-const expectedPage = { page: 1, pageSize: 20, sort: 'DESC', sortColumn: 'CVSS' };
+const expectedPage = { page: 1, pageSize: 40, sort: 'DESC', sortColumn: 'CVSS' };
 
 const vulnerability = {
   cesa: 'RHSA-2026:1000',
@@ -101,7 +101,7 @@ test('Advisory order ranks criticality first and breaks ties by publication date
   }
 });
 
-test('NXVD requests one 20-row CVSS page instead of exporting the feed', async () => {
+test('NXVD requests one 40-row CVSS page', async () => {
   const { request, data } = await refresh({ table_type: 'nxvd', advisory_sort: 'criticality' }, nxvd([vulnerability], 2837));
   assert.equal(request.url, nxvdUrl);
   assert.equal(request.options.method, 'POST');

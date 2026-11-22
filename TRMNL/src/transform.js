@@ -1,7 +1,7 @@
 // Nutanix's public portal endpoints are undocumented.
 const SOURCE = 'https://portal.nutanix.com';
 const TIMEOUT_MS = 4500;
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 40;
 const SAVED_STATE_BYTES = 8192;
 // Provide one featured item and up to thirty rows for the framework to fit.
 const DISPLAY_LIMIT = 31;

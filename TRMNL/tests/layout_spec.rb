@@ -15,7 +15,7 @@ RSpec.describe 'Nutanix Security layouts' do
     }
   end
 
-  released = (1..20).map do |n|
+  released = (1..28).map do |n|
     {
       productName: 'AOS', status: 'Released',
       severity: n == 4 ? 'Informational' : (n < 3 ? 'Critical' : 'High'),
@@ -28,7 +28,7 @@ RSpec.describe 'Nutanix Security layouts' do
   cases = {
     'advisories' => ['advisories', advisory_mocks, 'CVE-2099-1020', advisories.size],
     'advisories-empty' => ['advisories', { "GET #{advisories_url}" => { json: { content: { body: [] } } } }, 'No advisories returned', 0],
-    'nxvd' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released, totalCount: 200 } } }, 'CVE-2099-1001', 20],
+    'nxvd' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released, totalCount: 200 } } }, 'CVE-2099-1001', released.size],
     'nxvd-single' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released.take(1) } } }, 'CVE-2099-1001', 1],
     'nxvd-empty' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [] } } }, 'No released fixes on this page', 0],
     'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503', 0],
@@ -80,7 +80,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(request).to include(mocked: true, via: :transform)
           if mode == 'nxvd'
             expect(JSON.parse(request[:body])).to eq(
-              'page' => 1, 'pageSize' => 20, 'sort' => 'DESC', 'sortColumn' => 'CVSS', 'product' => ['AOS']
+              'page' => 1, 'pageSize' => 40, 'sort' => 'DESC', 'sortColumn' => 'CVSS', 'product' => ['AOS']
             )
           end
 

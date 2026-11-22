@@ -44,7 +44,7 @@ The framework fits the table to the available space. When rows are hidden, an **
 
 TRMNL's Polling strategy schedules refreshes. The Polling URL stays empty so Serverless can choose both the URL and HTTP method. TRMNL's Polling Verb setting applies one method to all configured URLs. [Dynamic Polling URLs](https://help.trmnl.com/en/articles/12689499-dynamic-polling-urls)
 
-Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 31 ranked items to TRMNL and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
+Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 40 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 31 ranked items to TRMNL and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
 
 The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
 
