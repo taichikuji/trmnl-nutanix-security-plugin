@@ -64,7 +64,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen.find('[data-ns-heading]').text).to eq(mode == 'nxvd' ? 'VULNERABILITY FIXES' : 'SECURITY ADVISORIES')
           expect(screen).to have_no_css('.title_bar')
-          expect(screen).to have_no_css('[data-ns-mast].border--h-black')
+          expect(screen).to have_css('[data-ns-mast].border--h-black')
           expect(screen).to have_no_css('.layout a')
           expect(screen.has_css?('[data-ns-qr] svg.qr-code')).to eq(view == 'full')
           expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
@@ -73,7 +73,7 @@ RSpec.describe 'Nutanix Security layouts' do
             width = device_name.start_with?('x') ? 133.2 : 68
             expect(screen.box('[data-ns-qr] svg.qr-code').width).to be_within(0.1).of(width)
           end
-          expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 && view != 'full' ? 1 : 0)
+          expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 ? 1 : 0)
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
@@ -100,16 +100,22 @@ RSpec.describe 'Nutanix Security layouts' do
           box = screen.box('.view')
           geometry = screen.evaluate(<<~JS)
             (() => {
-              const frame = document.querySelector('.layout').getBoundingClientRect();
+              const layout = document.querySelector('.layout');
+              const frame = layout.getBoundingClientRect();
+              const contentBottom = frame.bottom - parseFloat(getComputedStyle(layout).paddingBottom);
               const mast = document.querySelector('[data-ns-mast]');
+              const mastBox = mast.getBoundingClientRect();
+              const heading = mast.querySelector('[data-ns-heading]');
               const lead = document.querySelector('[data-ns-lead]')?.getBoundingClientRect();
-              const leadRule = document.querySelector('[data-ns-order]')?.parentElement.getBoundingClientRect();
               const table = document.querySelector('table');
               const tableBox = table?.getBoundingClientRect();
               const beside = Boolean(tableBox && lead && tableBox.left >= lead.right - 1);
               const rows = [...document.querySelectorAll('[data-ns-row]')].filter(row => row.getClientRects().length);
               const counter = table?.querySelector('[data-table-overflow-label]');
-              const boxes = [...document.querySelectorAll('table, [data-ns-lead]')]
+              const countBox = counter?.getBoundingClientRect();
+              const footer = document.querySelector('[data-ns-footer]')?.getBoundingClientRect();
+              const qr = document.querySelector('[data-ns-qr]')?.getBoundingClientRect();
+              const boxes = [...document.querySelectorAll('table, [data-ns-lead], [data-ns-footer], [data-table-overflow-label]')]
                 .filter(element => element.getClientRects().length)
                 .map(element => element.getBoundingClientRect());
               const cellOverflow = rows.some(row => [...row.querySelectorAll('.nutanix-line')].some(element => {
@@ -128,18 +134,23 @@ RSpec.describe 'Nutanix Security layouts' do
                 rows: rows.length,
                 renderedRows: document.querySelectorAll('[data-ns-row]').length,
                 counter: counter?.textContent.trim(),
+                headerInset: mastBox.top - frame.top,
+                leadGap: lead ? lead.top - mastBox.bottom : null,
+                qrGap: tableBox && qr ? qr.top - tableBox.bottom : null,
+                footerGap: tableBox && footer ? Math.abs(footer.top - tableBox.bottom) : 0,
+                countBesideQr: !countBox || !qr || (countBox.right <= qr.left &&
+                  countBox.top >= qr.top - 1 && countBox.bottom <= qr.bottom + 1),
                 unusedHeight: table ? table.parentElement.getBoundingClientRect().bottom - tableBox.bottom : 0,
                 rowHeight: rows[0]?.getBoundingClientRect().height,
                 cellOverflow,
                 severityClipped,
-                widthOverflow: mast.scrollWidth - mast.clientWidth,
-                clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > frame.bottom + 1 ||
+                widthOverflow: Math.max(mast.scrollWidth - mast.clientWidth, heading.scrollWidth - heading.clientWidth),
+                clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > contentBottom + 1 ||
                                           box.left < frame.left - 1 || box.right > frame.right + 1),
                 beside,
                 rightGap: rows.length ? Math.abs(tableBox.right - table.querySelector('th:last-child').getBoundingClientRect().right) : 0,
                 gutterDifference: rows.length && !beside ? Math.max(
-                  Math.abs(table.querySelector('th .label').getBoundingClientRect().left - leadRule.left),
-                  Math.abs(tableBox.right - leadRule.right)
+                  Math.abs(tableBox.left - mastBox.left), Math.abs(tableBox.right - mastBox.right)
                 ) : 0,
                 headers: Array.from(table?.querySelectorAll('th .label') ?? [])
                   .filter(cell => cell.getClientRects().length)
@@ -154,44 +165,47 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['tableFontSizes']).to be <= 1
           expect(geometry['rightGap']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
-          remaining = (count - 1).clamp(0, 30)
+          expect(geometry['footerGap']).to be <= 1
+          expect(geometry['countBesideQr']).to be(true)
           if view == 'full'
-            budget = { 'og' => 6, 'og-portrait' => 16, 'x' => 14, 'x-portrait' => 22 }.fetch(device_name)
-            shown = [remaining, budget].min
-            expect(geometry['renderedRows']).to eq(shown)
-            expect(geometry['rows']).to eq(shown)
+            scale = device_name.start_with?('x') ? 1.8 : 1
+            expect(geometry['headerInset']).to be_within(1).of(scale == 1 ? 8 : 12 * scale)
+            expect(geometry['leadGap']).to be_within(1).of(8 * scale) if count.positive?
+            expect(geometry['qrGap']).to be_within(1).of(4 * scale) if count > 1
+          end
+          remaining = (count - 1).clamp(0, 30)
+          expect(geometry['renderedRows']).to eq(remaining)
+          expect(screen).to have_no_css('[data-ns-footer]') unless view == 'full'
+          if remaining.zero? || (view == 'quadrant' && device_name.start_with?('og'))
+            expect(geometry['rows']).to eq(0)
             expect(geometry['counter']).to be_nil
-            if remaining > shown
-              expect(screen.find('[data-ns-more]').text).to eq("+#{remaining - shown} more")
-            else
-              expect(screen).to have_no_css('[data-ns-more]')
-            end
           else
-            expect(geometry['renderedRows']).to eq(remaining)
-            expect(screen).to have_no_css('[data-ns-footer]')
-            if remaining.zero? || (view == 'quadrant' && device_name.start_with?('og'))
-              expect(geometry['rows']).to eq(0)
-              expect(geometry['counter']).to be_nil
-            else
-              expect(geometry['rows']).to be_between(1, remaining)
-              hidden = remaining - geometry['rows']
-              if hidden.positive?
-                expect(geometry['counter']).to match(/\Aand #{hidden} more\z/i)
-                expect(geometry['unusedHeight']).to be < geometry['rowHeight'] + 1
+            expect(geometry['rows']).to be_between(1, remaining)
+            hidden = remaining - geometry['rows']
+            if hidden.positive?
+              if view == 'full'
+                expect(geometry['counter']).to eq("+#{hidden} more")
               else
-                expect(geometry['counter']).to be_nil
+                expect(geometry['counter']).to match(/\Aand #{hidden} more\z/i)
               end
+              expect(geometry['unusedHeight']).to be < geometry['rowHeight'] + 1
+            else
+              expect(geometry['counter']).to be_nil
             end
           end
           if count > 1 && view == 'full'
             expect(geometry['stackedMetadata']).to be(false)
             expect(geometry['beside']).to be(false)
-            expect(geometry['headers'].size).to eq(4)
             if mode == 'advisories'
               expect(geometry['headers']).to eq(%w[Summary Published Advisory Severity])
               expect(screen).to have_no_css('[data-ns-row] td:nth-child(2)', text: /#/)
               expect(screen).to have_css('[data-ns-row] td:nth-child(3) > span',
                                          text: advisory_sort == 'criticality' ? '#0018' : '#0019', exact_text: true)
+            else
+              expect(geometry['headers']).to eq(['Released fixes', 'Product', 'Fixed in', 'CVSS', 'Severity'])
+              expect(screen).to have_css('[data-ns-row] td:nth-child(2) > div', text: 'AOS', exact_text: true)
+              expect(screen).to have_css('[data-ns-row] td:nth-child(3) > div',
+                                         text: 'aos.7.6, aos.7.5.0.2, aos.7.3.1.8', exact_text: true)
             end
           end
           if geometry['rows'].positive?

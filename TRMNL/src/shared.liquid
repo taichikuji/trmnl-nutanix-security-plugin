@@ -32,14 +32,6 @@
 {% if feed_state == 'STALE' %}
   {% assign lead_label = saved_at | date: '%Y-%m-%d' | prepend: 'Saved ' %}
 {% endif %}
-{% assign full_row_limit = 6 %}
-{% if device_width >= 1024 %}{% assign full_row_limit = 14 %}{% endif %}
-{% if device_height > device_width %}
-  {% if device_width >= 1024 %}{% assign full_row_limit = 22 %}{% else %}{% assign full_row_limit = 16 %}{% endif %}
-{% endif %}
-{% assign row_limit = 30 %}
-{% if view == 'full' %}{% assign row_limit = full_row_limit %}{% endif %}
-{% assign full_more = records.size | minus: 1 | minus: full_row_limit | at_least: 0 %}
 {% assign lead = records.first %}
 {% assign compact = false %}
 {% assign score_visibility = 'hidden lg:inline' %}
@@ -55,10 +47,34 @@
   {% assign severity_width = 'w--28' %}
 {% endif %}
 
+{% capture qr_footer %}
+  {% if view == 'full' and portal_url != blank %}
+    <div class="flex flex--row flex--right w--full pt--1 no-shrink" data-ns-footer>
+      <div class="flex no-shrink nutanix-qr" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table" data-ns-qr>
+        {{ portal_url | qr_code: 3, 'l' }}
+      </div>
+    </div>
+  {% endif %}
+{% endcapture %}
+
 <style>
   .nutanix-table { table-layout: fixed; }
-  /* Match ARC Raiders' 800px header edges: logo at 17px, label ends at 782px. */
-  .nutanix-mast { padding-inline: calc(7px * var(--ui-scale)) calc(6px * var(--ui-scale)); }
+  .nutanix-view { --nutanix-qr-width: calc(68px * var(--ui-scale)); }
+  .screen--lg .nutanix-view { --nutanix-qr-width: calc(74px * var(--ui-scale)); }
+  .nutanix-qr { width: var(--nutanix-qr-width); }
+  /* Reserve the QR's height so the framework measures only the space available to data rows. */
+  .nutanix-table-with-qr { padding-block-end: calc(var(--nutanix-qr-width) + 4px * var(--ui-scale)); }
+  .nutanix-table-with-qr .table { position: relative; }
+  .nutanix-table-with-qr .table tr[data-table-overflow-label] {
+    position: absolute;
+    inset-inline-end: calc(var(--nutanix-qr-width) + var(--gap-small));
+    inset-block-start: calc(100% + var(--nutanix-qr-width) / 2 + 4px * var(--ui-scale));
+    transform: translateY(-50%);
+  }
+  .nutanix-table-with-qr [data-table-overflow-label] .label {
+    color: inherit;
+    font: var(--label-font-weight) var(--label-font-size)/var(--label-line-height) var(--label-font-family);
+  }
   .nutanix-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nutanix-headline {
     max-block-size: 2lh;
@@ -67,16 +83,14 @@
   }
 </style>
 
-<div class="layout layout--col layout--stretch gap--none">
-  <section class="flex flex--col h--full w--full {% if view == 'full' %}gap--xsmall lg:gap--small{% else %}gap--small{% endif %}" aria-label="Nutanix {{ heading }}">
-    <header class="flex flex--row flex--between flex--center-y gap--small w--full no-shrink nutanix-mast" data-ns-mast>
-      <div class="no-shrink">
-        {% comment %}https://www.nutanix.com/newsroom/media-resources{% endcomment %}
-        <svg class="block w--32 h--4" viewBox="0 0 1064.95 136.97" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Nutanix">
-          <path fill="currentColor" d="m476.14,28.27h-53.43s-.08.04-.08.08v103.97c0,1.1-.9,2-2,2h-25.81c-1.1,0-2-.9-2-2V28.35s-.04-.08-.08-.08h-53.28c-1.1,0-2-.9-2-2V2.98c0-1.1.9-2,2-2h136.68c1.1,0,2,.9,2,2v23.28c0,1.1-.9,2-2,2ZM855.73.98h-25.81c-1.1,0-2,.9-2,2v129.34c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V2.98c0-1.1-.9-2-2-2Zm208.58,130.1c.58.5.79,1.32.52,2.04-.27.72-.96,1.2-1.73,1.2h-39.75c-.44,0-.87-.16-1.21-.45l-43.67-37.79c-.4-.35-.64-.86-.64-1.39s.23-1.04.64-1.39l19.87-17.2c.69-.6,1.72-.6,2.41,0l63.54,54.99Zm-65.95-71.88c.35.3.78.45,1.21.45s.86-.15,1.21-.45l63.54-54.99c.58-.5.79-1.32.52-2.04-.27-.72-.96-1.2-1.73-1.2h-39.75c-.44,0-.87.16-1.21.45l-43.67,37.79c-.4.35-.64.86-.64,1.39s.23,1.04.64,1.39l19.87,17.2Zm-8.32,8.44c0-.54-.23-1.04-.64-1.39L914.49,1.43c-.33-.29-.76-.45-1.21-.45h-39.75c-.77,0-1.46.48-1.73,1.2-.27.72-.06,1.53.52,2.04l73.23,63.37s.04.09,0,.13l-73.23,63.37c-.58.5-.79,1.32-.52,2.04.27.72.96,1.2,1.73,1.2h39.75c.44,0,.87-.16,1.21-.45l74.91-64.83c.4-.35.64-.86.64-1.39ZM29.81,44.32c0-.07.08-.11.13-.07,3.92,3.51,93.13,83.39,97.43,86.77,3.8,2.98,8.19,4.83,13.91,3.99,7.4-.9,15.54-7.22,15.54-17.86V2.98c0-1.1-.9-2-2-2h-25.81c-1.1,0-2,.9-2,2v87.91c0,.07-.08.11-.13.07C122.95,87.45,33.75,7.57,29.44,4.19,25.65,1.21,21.26-.64,15.54.2,8.14,1.1,0,7.43,0,18.07v114.25c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V44.32Zm655.15,0c0-.07.08-.11.13-.07,3.92,3.51,93.13,83.39,97.43,86.77,3.8,2.98,8.19,4.83,13.91,3.99,7.4-.9,15.54-7.22,15.54-17.86V2.98c0-1.1-.9-2-2-2h-25.81c-1.1,0-2,.9-2,2v87.91c0,.07-.08.11-.13.07-3.92-3.51-93.13-83.39-97.43-86.77-3.8-2.98-8.19-4.83-13.91-3.99-7.4.9-15.54,7.23-15.54,17.86v114.25c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V44.32Zm-429.23,92.65c16.08-.04,34-.95,45-7.44,14.64-8.64,21.76-20.64,21.76-36.67V2.98c0-1.1-.89-2-1.99-2h-26.06c-1.1,0-2,.9-2,2v88.12c-.26,17.54-21.99,17.72-37.67,17.72h-14.25c-15.68,0-37.4-.17-37.66-17.72V2.98c0-1.1-.9-2-2.01-2h-26.06c-1.1,0-2,.9-2,2v89.87c0,16.03,7.13,28.03,21.77,36.67,11,6.49,28.92,7.41,45,7.44h16.17Zm387.13-5.65c.41.58.46,1.34.14,1.98-.32.63-.97,1.03-1.68,1.03h-31.87c-.64,0-1.24-.31-1.61-.84l-18.59-26.58s-.04-.04-.07-.04h-95.56s-.05.01-.07.04l-18.66,26.61c-.35.51-.93.81-1.54.81h-31.87c-.71,0-1.36-.4-1.68-1.03-.32-.63-.27-1.4.14-1.98,0,0,81.05-115.69,86.05-122.6C530.98,1.81,536.01,0,541.42,0c5.97,0,10.58,2.23,15.02,8.18l86.41,123.14Zm-73.02-51.86l-28.36-40.15s-.1-.05-.14,0l-28.37,40.15c-.04.06,0,.13.07.13h56.73c.07,0,.11-.08.07-.13Z"/>
-        </svg>
-      </div>
-      <span class="label label--base lg:label--large text--right nutanix-line w--min-0" data-ns-heading role="heading" aria-level="1">{{ heading | upcase | escape }}</span>
+<div class="layout layout--col layout--top gap--none nutanix-view {% if view == 'full' %}px--4 pt--2 pb--2 lg:px--5 lg:pt--3 lg:landscape:pb--1{% else %}p--2 lg:p--3{% endif %}">
+  <section class="flex flex--col gap--none h--full w--full" aria-label="Nutanix {{ heading }}">
+    <header class="flex flex--row flex--between flex--center-y gap--small w--full pb--2 border--h-black no-shrink" data-ns-mast>
+      {% comment %}https://www.nutanix.com/newsroom/media-resources{% endcomment %}
+      <svg class="block w--36 lg:w--48 h--[18px] lg:h--6 no-shrink {% if view != 'full' %}portrait:w--[72px] lg:portrait:w--40{% endif %}" viewBox="0 0 1064.95 136.97" preserveAspectRatio="xMinYMid meet" role="img" aria-label="Nutanix">
+        <path fill="currentColor" d="m476.14,28.27h-53.43s-.08.04-.08.08v103.97c0,1.1-.9,2-2,2h-25.81c-1.1,0-2-.9-2-2V28.35s-.04-.08-.08-.08h-53.28c-1.1,0-2-.9-2-2V2.98c0-1.1.9-2,2-2h136.68c1.1,0,2,.9,2,2v23.28c0,1.1-.9,2-2,2ZM855.73.98h-25.81c-1.1,0-2,.9-2,2v129.34c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V2.98c0-1.1-.9-2-2-2Zm208.58,130.1c.58.5.79,1.32.52,2.04-.27.72-.96,1.2-1.73,1.2h-39.75c-.44,0-.87-.16-1.21-.45l-43.67-37.79c-.4-.35-.64-.86-.64-1.39s.23-1.04.64-1.39l19.87-17.2c.69-.6,1.72-.6,2.41,0l63.54,54.99Zm-65.95-71.88c.35.3.78.45,1.21.45s.86-.15,1.21-.45l63.54-54.99c.58-.5.79-1.32.52-2.04-.27-.72-.96-1.2-1.73-1.2h-39.75c-.44,0-.87.16-1.21.45l-43.67,37.79c-.4.35-.64.86-.64,1.39s.23,1.04.64,1.39l19.87,17.2Zm-8.32,8.44c0-.54-.23-1.04-.64-1.39L914.49,1.43c-.33-.29-.76-.45-1.21-.45h-39.75c-.77,0-1.46.48-1.73,1.2-.27.72-.06,1.53.52,2.04l73.23,63.37s.04.09,0,.13l-73.23,63.37c-.58.5-.79,1.32-.52,2.04.27.72.96,1.2,1.73,1.2h39.75c.44,0,.87-.16,1.21-.45l74.91-64.83c.4-.35.64-.86.64-1.39ZM29.81,44.32c0-.07.08-.11.13-.07,3.92,3.51,93.13,83.39,97.43,86.77,3.8,2.98,8.19,4.83,13.91,3.99,7.4-.9,15.54-7.22,15.54-17.86V2.98c0-1.1-.9-2-2-2h-25.81c-1.1,0-2,.9-2,2v87.91c0,.07-.08.11-.13.07C122.95,87.45,33.75,7.57,29.44,4.19,25.65,1.21,21.26-.64,15.54.2,8.14,1.1,0,7.43,0,18.07v114.25c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V44.32Zm655.15,0c0-.07.08-.11.13-.07,3.92,3.51,93.13,83.39,97.43,86.77,3.8,2.98,8.19,4.83,13.91,3.99,7.4-.9,15.54-7.22,15.54-17.86V2.98c0-1.1-.9-2-2-2h-25.81c-1.1,0-2,.9-2,2v87.91c0,.07-.08.11-.13.07-3.92-3.51-93.13-83.39-97.43-86.77-3.8-2.98-8.19-4.83-13.91-3.99-7.4.9-15.54,7.23-15.54,17.86v114.25c0,1.1.9,2,2,2h25.81c1.1,0,2-.9,2-2V44.32Zm-429.23,92.65c16.08-.04,34-.95,45-7.44,14.64-8.64,21.76-20.64,21.76-36.67V2.98c0-1.1-.89-2-1.99-2h-26.06c-1.1,0-2,.9-2,2v88.12c-.26,17.54-21.99,17.72-37.67,17.72h-14.25c-15.68,0-37.4-.17-37.66-17.72V2.98c0-1.1-.9-2-2.01-2h-26.06c-1.1,0-2,.9-2,2v89.87c0,16.03,7.13,28.03,21.77,36.67,11,6.49,28.92,7.41,45,7.44h16.17Zm387.13-5.65c.41.58.46,1.34.14,1.98-.32.63-.97,1.03-1.68,1.03h-31.87c-.64,0-1.24-.31-1.61-.84l-18.59-26.58s-.04-.04-.07-.04h-95.56s-.05.01-.07.04l-18.66,26.61c-.35.51-.93.81-1.54.81h-31.87c-.71,0-1.36-.4-1.68-1.03-.32-.63-.27-1.4.14-1.98,0,0,81.05-115.69,86.05-122.6C530.98,1.81,536.01,0,541.42,0c5.97,0,10.58,2.23,15.02,8.18l86.41,123.14Zm-73.02-51.86l-28.36-40.15s-.1-.05-.14,0l-28.37,40.15c-.04.06,0,.13.07.13h56.73c.07,0,.11-.08.07-.13Z"/>
+      </svg>
+      <span class="label label--base lg:label--large text--right w--min-0 {% if view != 'full' %}portrait:label--small lg:portrait:label--large{% endif %}" data-ns-heading role="heading" aria-level="1">{{ heading | upcase | escape }}</span>
     </header>
 
     {% if feed_state == 'ERROR' or lead == blank %}
@@ -93,9 +107,10 @@
           <div class="description description--large text--center">Check the Nutanix advisory feed.</div>
         {% endif %}
       </div>
+      {{ qr_footer }}
     {% else %}
-      <div class="flex flex--col w--full grow h--min-0 {% if view == 'full' %}gap--xsmall lg:gap--small{% else %}gap--small{% endif %} {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
-        <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--1 lg:py--3 no-shrink{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
+      <div class="flex flex--col w--full grow h--min-0 {% if view == 'full' %}pt--2 gap--xsmall lg:gap--small{% else %}pt--1 gap--small{% endif %} {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
+        <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--1 lg:py--3 lg:landscape:py--2 no-shrink{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
           <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall w--full">
             <span class="label label--base lg:label--large text--bold" data-ns-order>{{ lead_label }}</span>
             <span class="label label--base label--outline">{{ lead.severity | default: lead.criticality | default: 'Unrated' | escape }}</span>
@@ -118,77 +133,90 @@
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0 grow basis--0 h--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'half_horizontal' %}landscape:h--full{% endif %}" aria-label="{{ table_heading }}">
-            <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}" {% if view != 'full' %}data-table-limit="true"{% endif %}>
-              <thead>
-                <tr>
-                  <th scope="col"><span class="label label--base text--bold">{% if view == 'full' and current_mode == 'advisories' %}Summary{% else %}{{ table_heading }}{% endif %}</span></th>
-                  {% if view == 'full' %}
-                    <th scope="col" class="{% if current_mode == 'nxvd' %}w--28 landscape:w--48 lg:w--64 lg:landscape:w--72{% else %}w--28 lg:w--32{% endif %}">
-                      <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product / fix{% else %}Published{% endif %}</span>
-                    </th>
-                  {% endif %}
-                  {% if current_mode == 'nxvd' %}
-                    {% comment %}Keep the column at zero width on small views so the overflow row can span it.{% endcomment %}
-                    <th scope="col" class="text--right {% if view == 'full' %}w--12{% else %}w--0 lg:w--12{% endif %}"><span class="label label--base text--bold pr--2 {{ score_visibility }}">CVSS</span></th>
-                  {% elsif view == 'full' %}
-                    <th scope="col" class="w--20 landscape:w--24"><span class="label label--base text--bold">Advisory</span></th>
-                  {% endif %}
-                  <th scope="col" class="text--right {{ severity_width }}">
-                    <span class="label label--base text--bold">Severity</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for entry in records offset: 1 limit: row_limit %}
-                  {% assign severity = entry.severity | default: entry.criticality | default: 'Unrated' %}
-                  {% assign details = entry.product %}
-                  {% unless current_mode == 'nxvd' %}
-                    {% assign details = entry.date | date: '%b %-d, %Y' %}
-                  {% endunless %}
-                  <tr data-ns-row>
-                    <td>
-                      <div class="label label--base block pr--2 text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
-                      {% if view == 'half_vertical' %}
-                        <div class="label label--base block pr--2 nutanix-line">
-                          {{ details | escape }}
-                        </div>
-                      {% endif %}
-                    </td>
+          <section class="w--full w--min-0 grow basis--0 h--min-0 {% if view == 'full' and portal_url != blank %}nutanix-table-with-qr{% endif %} {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'half_horizontal' %}landscape:h--full{% endif %}" aria-label="{{ table_heading }}">
+            <div class="h--full">
+              <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}" data-table-limit="true">
+                <thead>
+                  <tr>
+                    <th scope="col"><span class="label label--base text--bold">{% if view == 'full' and current_mode == 'advisories' %}Summary{% else %}{{ table_heading }}{% endif %}</span></th>
                     {% if view == 'full' %}
-                      <td>
-                        <div class="label label--base block pr--2 nutanix-line">
-                          {{ details | escape }}{% if current_mode == 'nxvd' and entry.fixed != blank %}{% if details != blank %} · {% endif %}{{ entry.fixed | escape }}{% endif %}
-                        </div>
-                      </td>
+                      {% if current_mode == 'nxvd' %}
+                        <th scope="col" class="w--20 landscape:w--32 lg:w--36"><span class="label label--base text--bold">Product</span></th>
+                        <th scope="col" class="w--24 landscape:w--48 lg:w--56 lg:landscape:w--72"><span class="label label--base text--bold">Fixed in</span></th>
+                      {% else %}
+                        <th scope="col" class="w--28 lg:w--32"><span class="label label--base text--bold">Published</span></th>
+                      {% endif %}
                     {% endif %}
                     {% if current_mode == 'nxvd' %}
-                      <td class="text--right"><span class="label label--base text--bold pr--2 {{ score_visibility }}">{{ entry.cvss | escape }}</span></td>
+                      {% comment %}Keep the column at zero width on small views so the overflow row can span it.{% endcomment %}
+                      <th scope="col" class="text--right {% if view == 'full' %}w--12{% else %}w--0 lg:w--12{% endif %}"><span class="label label--base text--bold pr--2 {{ score_visibility }}">CVSS</span></th>
                     {% elsif view == 'full' %}
-                      <td><span class="label label--base block pr--2 nutanix-line">#{{ entry.advisoryNumber | escape }}</span></td>
+                      <th scope="col" class="w--20 landscape:w--24"><span class="label label--base text--bold">Advisory</span></th>
                     {% endif %}
-                    <td class="text--right">
-                      <div class="flex flex--row flex--right flex--center-y">
-                        <span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
-                      </div>
-                    </td>
+                    <th scope="col" class="text--right {{ severity_width }}">
+                      <span class="label label--base text--bold">Severity</span>
+                    </th>
                   </tr>
-                {% endfor %}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {% for entry in records offset: 1 limit: 30 %}
+                    {% assign severity = entry.severity | default: entry.criticality | default: 'Unrated' %}
+                    {% assign details = entry.product %}
+                    {% unless current_mode == 'nxvd' %}
+                      {% assign details = entry.date | date: '%b %-d, %Y' %}
+                    {% endunless %}
+                    <tr data-ns-row>
+                      <td>
+                        <div class="label label--base block pr--2 text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
+                        {% if view == 'half_vertical' %}
+                          <div class="label label--base block pr--2 nutanix-line">
+                            {{ details | escape }}
+                          </div>
+                        {% endif %}
+                      </td>
+                      {% if view == 'full' %}
+                        <td>
+                          <div class="label label--base block pr--2 nutanix-line">{{ details | escape }}</div>
+                        </td>
+                        {% if current_mode == 'nxvd' %}
+                          <td><div class="label label--base block pr--2 nutanix-line">{{ entry.fixed | escape }}</div></td>
+                        {% endif %}
+                      {% endif %}
+                      {% if current_mode == 'nxvd' %}
+                        <td class="text--right"><span class="label label--base text--bold pr--2 {{ score_visibility }}">{{ entry.cvss | escape }}</span></td>
+                      {% elsif view == 'full' %}
+                        <td><span class="label label--base block pr--2 nutanix-line">#{{ entry.advisoryNumber | escape }}</span></td>
+                      {% endif %}
+                      <td class="text--right">
+                        <div class="flex flex--row flex--right flex--center-y">
+                          <span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              {% if qr_footer != blank %}
+                <script>
+                  (() => {
+                    const body = document.currentScript.previousElementSibling.tBodies[0];
+                    const formatOverflow = () => {
+                      const label = body.querySelector('[data-table-overflow-label] .label');
+                      if (!label) return;
+                      const hidden = body.querySelectorAll('[data-hidden-by-table-overflow]').length;
+                      const text = `+${hidden} more`;
+                      if (label.textContent !== text) label.textContent = text;
+                    };
+                    new MutationObserver(formatOverflow).observe(body, { childList: true, subtree: true });
+                    formatOverflow();
+                  })();
+                </script>
+              {% endif %}
+              {{ qr_footer }}
+            </div>
           </section>
-        {% endif %}
-      </div>
-    {% endif %}
-    {% if view == 'full' %}
-      <div class="flex flex--row flex--right flex--center-y gap--small w--full pl--3 lg:pl--4 pr--1.5 pb--1 no-shrink" data-ns-footer>
-        {% if full_more > 0 %}
-          <span class="label label--base lg:label--large" data-ns-more>+{{ full_more }} more</span>
-        {% endif %}
-        {% if portal_url != blank %}
-          <div class="flex no-shrink w--[68px] lg:w--[74px]" role="img" aria-label="QR code for the Nutanix {{ heading | downcase }} table" data-ns-qr>
-            {{ portal_url | qr_code: 3, 'l' }}
-          </div>
+        {% else %}
+          {{ qr_footer }}
         {% endif %}
       </div>
     {% endif %}

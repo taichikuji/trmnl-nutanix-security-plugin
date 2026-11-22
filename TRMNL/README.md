@@ -10,7 +10,7 @@ python3 scripts/package-import.py
 
 The local build writes `dist/trmnl-nutanix-sec-plugin.zip`. Open Private Plugins, select **Import new**, and upload the ZIP. Use **Advisory order** for Security Advisories or **Product (NXVD)** for the vulnerabilities table. [Private Plugins](https://trmnl.com/plugin_settings?keyname=private_plugin)
 
-For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
+For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Enable **Remove Bleed Margin** so the layouts can apply their own padding. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
 
 ## Icon
 
@@ -34,11 +34,11 @@ Rendered with public Nutanix data.
 
 [Shared Liquid](src/shared.liquid) renders both briefs. Advisories leads with the latest publication by default. **Highest criticality first** ranks advisories by severity and shows newer publications first within each severity. NXVD leads with the first released fix on the CVSS-ranked page and shows its product, package and fixed release when available.
 
-The full view on TRMNL OG and X groups a small QR code and a dynamically calculated `+N more` counter at the bottom right, like the ARC Raiders footer. Full view row budgets use the available height (OG landscape: 6 rows, OG portrait: 16, X landscape: 14, X portrait: 22); smaller views retain framework-managed table overflow. It opens the selected table on Nutanix's support portal. NXVD opens with your selected product. The portal uses its own sort order.
+The full view places the QR code and overflow count together just below the table on the right. The code opens the selected table on Nutanix’s support portal, with the selected product for NXVD. The portal uses its own sort order.
 
-The full views share a lead panel and a table. Advisory rows have separate columns for the publication date and advisory number. NXVD rows group the product and fixed releases, with separate columns for CVSS and severity. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
+The full views share a lead panel and a table. Advisory rows have separate columns for the publication date and advisory number. NXVD rows have separate columns for product, fixed releases, CVSS, and severity. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
-The framework fits the table to the available space. When rows are hidden, an **And N more** line shows how many additional items are in the current brief. [TRMNL table overflow](https://trmnl.com/framework/docs/3.4/table_overflow)
+The framework fits the table to the available space. The overflow count shows how many additional items are in the current brief. [TRMNL table overflow](https://trmnl.com/framework/docs/3.4/table_overflow)
 
 ## Data behavior
 
