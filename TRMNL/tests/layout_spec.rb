@@ -152,7 +152,7 @@ RSpec.describe 'Nutanix Security layouts' do
             expect(geometry['rows']).to eq(shown)
             expect(geometry['counter']).to be_nil
             if remaining > shown
-              expect(screen.find('[data-ns-more]').text).to eq("+#{count - 1 - shown} more")
+              expect(screen.find('[data-ns-more]').text).to eq("+#{remaining - shown} more")
             else
               expect(screen).to have_no_css('[data-ns-more]')
             end
