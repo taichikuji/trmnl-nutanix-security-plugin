@@ -52,13 +52,15 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen).to have_text(label)
           expect(screen).to have_no_text('ALL CLEAR')
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
+          expect(screen.find('[data-ns-heading]').text).to eq(mode == 'nxvd' ? 'VULNERABILITY FIXES' : 'SECURITY ADVISORIES')
           expect(screen).to have_no_css('.title_bar')
           expect(screen).to have_no_css('.layout a')
-          expect(screen.has_css?('[data-ns-mast] svg.qr-code')).to eq(view == 'full')
+          expect(screen.has_css?('[data-ns-qr] svg.qr-code')).to eq(view == 'full')
+          expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
           if view == 'full'
             expect(screen).to have_qr_code(screen.result.data.fetch('portal_url'))
             width = device_name.start_with?('x') ? 133.2 : 68
-            expect(screen.box('[data-ns-mast] svg.qr-code').width).to be_within(0.1).of(width)
+            expect(screen.box('[data-ns-qr] svg.qr-code').width).to be_within(0.1).of(width)
           end
           expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 ? 1 : 0)
           expect(screen.result.requests.size).to eq(1)
@@ -201,7 +203,8 @@ RSpec.describe 'Nutanix Security layouts' do
                             mocks: { mocks.keys.first => failure }, state: live.state)
       expect(screen).to have_no_transform_error
       expect(screen).to have_text('Saved 2026-11-20')
-      expect(screen.has_css?('[data-ns-mast] svg.qr-code')).to eq(view == 'full')
+      expect(screen.has_css?('[data-ns-qr] svg.qr-code')).to eq(view == 'full')
+      expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
       expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label)
       expect(screen.result.data.fetch('source_error')).to eq(reason)
       expect(screen.result.state).to eq(live.state)
