@@ -15,7 +15,7 @@
 
 {% template nutanix_severity %}
 {%- assign severity = value | default: 'Unrated' -%}
-<span class="label label--base {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
+<span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
 {% endtemplate %}
 
 {% template nutanix_table %}
@@ -45,12 +45,16 @@
 {% assign portrait_rows = 8 %}
 {% assign score_visibility = 'hidden lg:inline' %}
 {% assign severity_width = 'w--24 lg:w--32' %}
+{% if current_mode == 'nxvd' %}
+  {% assign severity_width = 'w--28 lg:w--36' %}
+{% endif %}
 {% if view == 'full' %}
   {% assign row_limit = 16 %}
   {% assign portrait_rows = 11 %}
   {% assign severity_width = 'w--32' %}
   {% if current_mode == 'nxvd' %}
     {% assign score_visibility = 'inline' %}
+    {% assign severity_width = 'w--36' %}
   {% endif %}
 {% endif %}
 {% case view %}
@@ -71,18 +75,7 @@
   {% if view == 'full' %}
     .screen:not(.screen--portrait) .nutanix-table-space {
       container: nutanix-table / size;
-      flex: 1;
-      min-height: 0;
       font-size: calc(1px * var(--ui-scale));
-    }
-    .screen:not(.screen--portrait) .nutanix-table-space td:last-child { white-space: nowrap; }
-    .screen:not(.screen--portrait) .nutanix-table-space td:last-child .label { vertical-align: middle; }
-    .screen:not(.screen--portrait) .nutanix-table-space td:last-child .label + .label {
-      display: inline-block;
-      max-width: calc(100% - 2.5em);
-      margin-inline-start: .2em;
-      overflow: hidden;
-      text-overflow: ellipsis;
     }
     {% comment %}The small table uses a 24px header and 31px rows at the screen's UI scale. Leave 1px extra before revealing a row.{% endcomment %}
     {% for row in (5..row_limit) %}
@@ -159,7 +152,7 @@
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'full' %}nutanix-table-space{% endif %}" aria-label="{{ table_heading }}">
+          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'full' %}landscape:grow landscape:basis--0 landscape:h--min-0 nutanix-table-space{% endif %}" aria-label="{{ table_heading }}">
             <table class="table nutanix-table w--full {% if compact %}table--small{% elsif view == 'full' %}landscape:table--small lg:portrait:table--large{% endif %}">
               <thead>
                 <tr>
@@ -202,8 +195,10 @@
                     {% endif %}
                     <td class="text--right">
                       {% if current_mode == 'nxvd' %}
-                        {% if entry.cvss != blank %}<span class="label label--base text--bold {{ score_visibility }}">{{ entry.cvss | escape }}</span>{% endif %}
-                        {% render 'nutanix_severity', value: entry.severity %}
+                        <div class="label label--base flex flex--row flex--right flex--center-y gap--xsmall">
+                          {% if entry.cvss != blank %}<span class="label label--base text--bold no-shrink {{ score_visibility }}">{{ entry.cvss | escape }}</span>{% endif %}
+                          {% render 'nutanix_severity', value: entry.severity %}
+                        </div>
                       {% else %}
                         {% render 'nutanix_severity', value: entry.criticality %}
                       {% endif %}

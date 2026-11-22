@@ -109,7 +109,10 @@ RSpec.describe 'Nutanix Security layouts' do
                 if (!element.getClientRects().length) return false;
                 return element.getBoundingClientRect().right > element.closest('td').getBoundingClientRect().right + 1;
               }));
-              const fontSizes = new Set(Array.from(table?.querySelectorAll('th > span, td > div, td > span') ?? [])
+              const severityClipped = rows.some(row => [...row.querySelectorAll('td:last-child .nutanix-line')].some(
+                label => label.scrollWidth > label.clientWidth + 1
+              ));
+              const fontSizes = new Set(Array.from(table?.querySelectorAll('.label') ?? [])
                 .filter(element => element.getClientRects().length)
                 .map(element => getComputedStyle(element).fontSize));
               return {
@@ -118,6 +121,7 @@ RSpec.describe 'Nutanix Security layouts' do
                 rows: rows.length,
                 renderedRows: document.querySelectorAll('[data-ns-row]').length,
                 cellOverflow,
+                severityClipped,
                 widthOverflow: mast.scrollWidth - mast.clientWidth,
                 clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > frame.bottom + 1 ||
                                           box.left < frame.left - 1 || box.right > frame.right + 1),
@@ -133,6 +137,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['widthOverflow']).to be <= 1
           expect(geometry['clipped']).to be(false)
           expect(geometry['cellOverflow']).to be(false)
+          expect(geometry['severityClipped']).to be(false)
           expect(geometry['tableFontSizes']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
           remaining = [count - 1, 0].max
@@ -160,8 +165,8 @@ RSpec.describe 'Nutanix Security layouts' do
     end
   end
 
-  %w[og x].each do |device_name|
-    it "keeps the full #{device_name} layout steady while framework JavaScript loads" do
+  %w[og x].product(%w[advisories nxvd]).each do |device_name, mode|
+    it "keeps the full #{device_name} #{mode} layout steady while framework JavaScript loads" do
       version = YAML.safe_load_file(File.expand_path('../src/settings.yml', __dir__)).fetch('framework_version')
       overrides = {
         "https://trmnl.com/js/#{version}/plugins.js" => {
@@ -170,7 +175,7 @@ RSpec.describe 'Nutanix Security layouts' do
         }
       }
       args = { view: 'full', device: devices.fetch(device_name),
-               custom_fields: { table_type: 'advisories' }, mocks: advisory_mocks }
+               custom_fields: { table_type: mode, nxvd_product: 'aos' }, mocks: cases.fetch(mode)[1] }
       geometry = <<~JS
         Array.from(document.querySelectorAll('[data-ns-mast], [data-ns-lead], [data-ns-subject], table, [data-ns-row]'))
           .filter(element => element.getClientRects().length)
