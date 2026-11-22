@@ -130,7 +130,9 @@ RSpec.describe 'Nutanix Security layouts' do
                   Math.abs(table.querySelector('th .label').getBoundingClientRect().left - leadRule.left),
                   Math.abs(tableBox.right - leadRule.right)
                 ) : 0,
-                columns: table ? [...table.querySelectorAll('th')].filter(cell => cell.getClientRects().length).length : 0
+                headers: Array.from(table?.querySelectorAll('th') ?? [])
+                  .filter(cell => cell.getClientRects().length)
+                  .map(cell => cell.textContent.trim())
               };
             })()
           JS
@@ -151,7 +153,14 @@ RSpec.describe 'Nutanix Security layouts' do
           if count > 1 && view == 'full'
             expect(geometry['stackedMetadata']).to be(false)
             expect(geometry['beside']).to be(false)
-            expect(geometry['columns']).to eq(3)
+            expect(geometry['headers'].size).to eq(mode == 'nxvd' ? 4 : 3)
+          end
+          if geometry['rows'].positive?
+            expect(geometry['headers'].last).to eq('Severity')
+            if mode == 'nxvd' && (view == 'full' || device_name.start_with?('x'))
+              expect(geometry['headers'].last(2)).to eq(%w[CVSS Severity])
+              expect(screen).to have_css('[data-ns-row] td:nth-last-child(2)', text: '9.8')
+            end
           end
 
           FileUtils.mkdir_p('_build/previews')

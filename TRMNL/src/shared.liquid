@@ -38,19 +38,13 @@
 {% assign row_limit = 9 %}
 {% assign regular_rows = 4 %}
 {% assign portrait_rows = 8 %}
-{% assign score_visibility = 'hidden lg:inline' %}
+{% assign score_visibility = 'hidden lg:table-cell' %}
 {% assign severity_width = 'w--24 lg:w--32' %}
-{% if current_mode == 'nxvd' %}
-  {% assign severity_width = 'w--28 lg:w--36' %}
-{% endif %}
 {% case view %}
   {% when 'full' %}
     {% assign row_limit = 16 %}
     {% assign severity_width = 'w--32' %}
-    {% if current_mode == 'nxvd' %}
-      {% assign score_visibility = 'inline' %}
-      {% assign severity_width = 'w--36' %}
-    {% endif %}
+    {% assign score_visibility = '' %}
   {% when 'half_horizontal' %}
     {% assign compact = true %}
     {% assign row_limit = 5 %}
@@ -62,6 +56,9 @@
     {% assign regular_rows = 0 %}
     {% assign portrait_rows = 0 %}
 {% endcase %}
+{% if current_mode == 'nxvd' %}
+  {% assign severity_width = 'w--28' %}
+{% endif %}
 
 <style>
   .nutanix-table { table-layout: fixed; }
@@ -151,8 +148,11 @@
                       <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product / fix{% else %}Published{% endif %}</span>
                     </th>
                   {% endif %}
+                  {% if current_mode == 'nxvd' %}
+                    <th scope="col" class="w--12 text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">CVSS</span></th>
+                  {% endif %}
                   <th scope="col" class="text--right {{ severity_width }}">
-                    <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}<span class="{{ score_visibility }}">CVSS&nbsp;·&nbsp;</span>{% endif %}Severity</span>
+                    <span class="label label--base text--bold">Severity</span>
                   </th>
                 </tr>
               </thead>
@@ -181,9 +181,11 @@
                         </div>
                       </td>
                     {% endif %}
+                    {% if current_mode == 'nxvd' %}
+                      <td class="text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">{{ entry.cvss | escape }}</span></td>
+                    {% endif %}
                     <td class="text--right">
-                      <div class="label label--base flex flex--row flex--right flex--center-y gap--xsmall">
-                        {% if current_mode == 'nxvd' and entry.cvss != blank %}<span class="label label--base text--bold no-shrink {{ score_visibility }}">{{ entry.cvss | escape }}</span>{% endif %}
+                      <div class="flex flex--row flex--right flex--center-y">
                         <span class="label label--base nutanix-line w--min-0 {% if severity == 'Critical' %}label--filled{% else %}label--outline{% endif %}">{{ severity | escape }}</span>
                       </div>
                     </td>
