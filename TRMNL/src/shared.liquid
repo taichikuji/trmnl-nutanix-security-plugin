@@ -33,28 +33,15 @@
   {% assign lead_label = saved_at | date: '%Y-%m-%d' | prepend: 'Saved ' %}
 {% endif %}
 {% assign lead = records.first %}
-{% comment %}Bound the markup before paint. Large and portrait screens show extra rows with framework classes.{% endcomment %}
 {% assign compact = false %}
-{% assign row_limit = 9 %}
-{% assign regular_rows = 4 %}
-{% assign portrait_rows = 8 %}
-{% assign score_visibility = 'hidden lg:table-cell' %}
+{% assign score_visibility = 'hidden lg:inline' %}
 {% assign severity_width = 'w--24 lg:w--32' %}
 {% case view %}
   {% when 'full' %}
-    {% assign row_limit = 16 %}
     {% assign severity_width = 'w--28' %}
     {% assign score_visibility = '' %}
-  {% when 'half_horizontal' %}
+  {% when 'half_horizontal', 'quadrant' %}
     {% assign compact = true %}
-    {% assign row_limit = 5 %}
-    {% assign regular_rows = 3 %}
-    {% assign portrait_rows = 3 %}
-  {% when 'quadrant' %}
-    {% assign compact = true %}
-    {% assign row_limit = 2 %}
-    {% assign regular_rows = 0 %}
-    {% assign portrait_rows = 0 %}
 {% endcase %}
 {% if current_mode == 'nxvd' %}
   {% assign severity_width = 'w--28' %}
@@ -62,18 +49,6 @@
 
 <style>
   .nutanix-table { table-layout: fixed; }
-  {% if view == 'full' %}
-    .nutanix-table-space {
-      container: nutanix-table / size;
-      font-size: calc(1px * var(--ui-scale));
-    }
-    {% comment %}The small table uses a 24px header and 31px rows at the screen's UI scale. Leave 1px extra before revealing a row.{% endcomment %}
-    {% for row in (5..row_limit) %}
-      @container nutanix-table (height >= {{ row | times: 31 | plus: 25 }}em) {
-        .trmnl .screen .nutanix-table tbody tr:nth-child({{ row }}) { display: table-row; }
-      }
-    {% endfor %}
-  {% endif %}
   .nutanix-line { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .nutanix-headline {
     max-block-size: 2lh;
@@ -114,7 +89,7 @@
         {% endif %}
       </div>
     {% else %}
-      <div class="flex flex--col w--full {% if view == 'full' %}gap--xsmall lg:gap--small grow{% else %}gap--small{% endif %} h--min-0 {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
+      <div class="flex flex--col w--full grow h--min-0 {% if view == 'full' %}gap--xsmall lg:gap--small{% else %}gap--small{% endif %} {% if records.size > 1 and view == 'half_horizontal' %}landscape:grid landscape:grid--cols-2{% endif %}">
         <article class="inverse flex flex--col flex--left gap--none px--3 lg:px--4 {% if view == 'full' %}py--1 lg:py--3 no-shrink{% else %}py--2{% endif %} w--full w--min-0 self--start" data-ns-lead>
           <div class="flex flex--row flex--between flex--center-y flex--wrap gap--xsmall w--full">
             <span class="label label--base lg:label--large text--bold" data-ns-order>{{ lead_label }}</span>
@@ -138,8 +113,8 @@
         </article>
 
         {% if records.size > 1 %}
-          <section class="w--full w--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'full' %}grow basis--0 h--min-0 nutanix-table-space{% endif %}" aria-label="{{ table_heading }}">
-            <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}">
+          <section class="w--full w--min-0 grow basis--0 h--min-0 px--3 lg:px--4 {% if view == 'quadrant' %}hidden lg:block{% elsif view == 'half_horizontal' %}landscape:h--full{% endif %}" aria-label="{{ table_heading }}">
+            <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}" data-table-limit="true">
               <thead>
                 <tr>
                   <th scope="col"><span class="label label--base text--bold">{% if view == 'full' and current_mode == 'advisories' %}Summary{% else %}{{ table_heading }}{% endif %}</span></th>
@@ -149,7 +124,8 @@
                     </th>
                   {% endif %}
                   {% if current_mode == 'nxvd' %}
-                    <th scope="col" class="w--12 text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">CVSS</span></th>
+                    {% comment %}Keep the column at zero width on small views so the overflow row can span it.{% endcomment %}
+                    <th scope="col" class="text--right {% if view == 'full' %}w--12{% else %}w--0 lg:w--12{% endif %}"><span class="label label--base text--bold pr--2 {{ score_visibility }}">CVSS</span></th>
                   {% elsif view == 'full' %}
                     <th scope="col" class="w--20 landscape:w--24"><span class="label label--base text--bold">Advisory</span></th>
                   {% endif %}
@@ -159,13 +135,13 @@
                 </tr>
               </thead>
               <tbody>
-                {% for entry in records offset: 1 limit: row_limit %}
+                {% for entry in records offset: 1 limit: 30 %}
                   {% assign severity = entry.severity | default: entry.criticality | default: 'Unrated' %}
                   {% assign details = entry.product %}
                   {% unless current_mode == 'nxvd' %}
                     {% assign details = entry.date | date: '%b %-d, %Y' %}
                   {% endunless %}
-                  <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden{% unless view == 'full' %} {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}lg:table-row{% endunless %}"{% endif %}>
+                  <tr data-ns-row>
                     <td>
                       <div class="label label--base block pr--2 text--bold nutanix-line">{% render 'nutanix_subject', entry: entry, mode: current_mode %}</div>
                       {% if view == 'half_vertical' %}
@@ -182,7 +158,7 @@
                       </td>
                     {% endif %}
                     {% if current_mode == 'nxvd' %}
-                      <td class="text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">{{ entry.cvss | escape }}</span></td>
+                      <td class="text--right"><span class="label label--base text--bold pr--2 {{ score_visibility }}">{{ entry.cvss | escape }}</span></td>
                     {% elsif view == 'full' %}
                       <td><span class="label label--base block pr--2 nutanix-line">#{{ entry.advisoryNumber | escape }}</span></td>
                     {% endif %}

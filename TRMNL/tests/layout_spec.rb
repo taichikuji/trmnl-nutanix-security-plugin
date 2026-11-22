@@ -1,15 +1,14 @@
 require 'fileutils'
 require 'json'
-require 'yaml'
 
 RSpec.describe 'Nutanix Security layouts' do
   advisories_url = 'https://portal.nutanix.com/api/v1/pages/securityAdvisories'
   nxvd_url = 'https://portal.nutanix.com/api/v1/vulnerabilities'
 
-  advisories = (1..20).map do |n|
+  advisories = (1..34).map do |n|
     {
       advisoryNumber: format('%04d', n), criticality: (4..19).cover?(n) ? 'Critical' : 'High',
-      date: "Nov #{n}, 2026",
+      date: n <= 20 ? "Nov #{n}, 2026" : "Oct #{n - 20}, 2026",
       affectedVersions: 'Nutanix AOS, Prism Central, and AHV on the affected software releases',
       summary: "Investigation and BreakFix Guidance for CVE-2099-#{1000 + n} in a component with a very long name affecting several product versions",
       href: "https://download.nutanix.com/alerts/Security_Advisory_#{format('%04d', n)}.pdf"
@@ -27,13 +26,13 @@ RSpec.describe 'Nutanix Security layouts' do
 
   advisory_mocks = { "GET #{advisories_url}" => { json: { content: { body: advisories.rotate(2) } } } }
   cases = {
-    'advisories' => ['advisories', advisory_mocks, 'CVE-2099-1020', 20],
+    'advisories' => ['advisories', advisory_mocks, 'CVE-2099-1020', advisories.size],
     'advisories-empty' => ['advisories', { "GET #{advisories_url}" => { json: { content: { body: [] } } } }, 'No advisories returned', 0],
     'nxvd' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released, totalCount: 200 } } }, 'CVE-2099-1001', 20],
     'nxvd-single' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: released.take(1) } } }, 'CVE-2099-1001', 1],
     'nxvd-empty' => ['nxvd', { "POST #{nxvd_url}" => { json: { vulnerabilities: [] } } }, 'No released fixes on this page', 0],
     'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503', 0],
-    'advisories-criticality' => ['advisories', advisory_mocks, 'CVE-2099-1019', 20, 'criticality']
+    'advisories-criticality' => ['advisories', advisory_mocks, 'CVE-2099-1019', advisories.size, 'criticality']
   }
   devices = {
     'og' => { model: 'og_png', width: 800, height: 480, bit_depth: 1, screen_classes: 'screen screen--og_png screen--md screen--1bit' },
@@ -42,16 +41,9 @@ RSpec.describe 'Nutanix Security layouts' do
     'x-portrait' => { model: 'v2', width: 1404, height: 1872, bit_depth: 4, screen_classes: 'screen screen--v2 screen--lg screen--4bit screen--portrait' }
   }
   views = %w[full half_horizontal half_vertical quadrant]
-  row_limits = {
-    'og' => [6, 3, 4, 0],
-    'og-portrait' => [16, 3, 8, 0],
-    'x' => [15, 5, 9, 2],
-    'x-portrait' => [16, 5, 9, 2]
-  }
-
   cases.each do |scenario, (mode, mocks, label, count, advisory_sort)|
     devices.each do |device_name, device|
-      views.each_with_index do |view, view_index|
+      views.each do |view|
         it "renders #{scenario} on #{device_name} #{view}" do
           fields = { table_type: mode, nxvd_product: 'aos' }
           fields[:advisory_sort] = advisory_sort if advisory_sort
@@ -68,7 +60,7 @@ RSpec.describe 'Nutanix Security layouts' do
             width = device_name.start_with?('x') ? 133.2 : 68
             expect(screen.box('[data-ns-mast] svg.qr-code').width).to be_within(0.1).of(width)
           end
-          expect(screen).to have_no_css('.layout [data-table-limit], .layout [data-clamp]')
+          expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 ? 1 : 0)
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
@@ -103,7 +95,8 @@ RSpec.describe 'Nutanix Security layouts' do
               const tableBox = table?.getBoundingClientRect();
               const beside = Boolean(tableBox && lead && tableBox.left >= lead.right - 1);
               const rows = [...document.querySelectorAll('[data-ns-row]')].filter(row => row.getClientRects().length);
-              const boxes = [...rows, ...document.querySelectorAll('thead, [data-ns-lead]')]
+              const counter = table?.querySelector('[data-table-overflow-label]');
+              const boxes = [...document.querySelectorAll('table, [data-ns-lead]')]
                 .filter(element => element.getClientRects().length)
                 .map(element => element.getBoundingClientRect());
               const cellOverflow = rows.some(row => [...row.querySelectorAll('.nutanix-line')].some(element => {
@@ -113,7 +106,7 @@ RSpec.describe 'Nutanix Security layouts' do
               const severityClipped = rows.some(row => [...row.querySelectorAll('td:last-child .nutanix-line')].some(
                 label => label.scrollWidth > label.clientWidth + 1
               ));
-              const fontSizes = new Set(Array.from(table?.querySelectorAll('.label') ?? [])
+              const fontSizes = new Set(Array.from(table?.querySelectorAll('thead .label, [data-ns-row] .label') ?? [])
                 .filter(element => element.getClientRects().length)
                 .map(element => getComputedStyle(element).fontSize));
               return {
@@ -121,17 +114,21 @@ RSpec.describe 'Nutanix Security layouts' do
                 stackedMetadata: Boolean(rows[0]?.querySelector('td:first-child > :nth-child(2)')?.getClientRects().length),
                 rows: rows.length,
                 renderedRows: document.querySelectorAll('[data-ns-row]').length,
+                counter: counter?.textContent.trim(),
+                unusedHeight: table ? table.parentElement.getBoundingClientRect().bottom - tableBox.bottom : 0,
+                rowHeight: rows[0]?.getBoundingClientRect().height,
                 cellOverflow,
                 severityClipped,
                 widthOverflow: mast.scrollWidth - mast.clientWidth,
                 clipped: boxes.some(box => box.top < frame.top - 1 || box.bottom > frame.bottom + 1 ||
                                           box.left < frame.left - 1 || box.right > frame.right + 1),
                 beside,
+                rightGap: rows.length ? Math.abs(tableBox.right - table.querySelector('th:last-child').getBoundingClientRect().right) : 0,
                 gutterDifference: rows.length && !beside ? Math.max(
                   Math.abs(table.querySelector('th .label').getBoundingClientRect().left - leadRule.left),
                   Math.abs(tableBox.right - leadRule.right)
                 ) : 0,
-                headers: Array.from(table?.querySelectorAll('th') ?? [])
+                headers: Array.from(table?.querySelectorAll('th .label') ?? [])
                   .filter(cell => cell.getClientRects().length)
                   .map(cell => cell.textContent.trim())
               };
@@ -142,15 +139,23 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['cellOverflow']).to be(false)
           expect(geometry['severityClipped']).to be(false)
           expect(geometry['tableFontSizes']).to be <= 1
+          expect(geometry['rightGap']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
-          remaining = [count - 1, 0].max
-          visible_limit = row_limits.fetch(device_name)[view_index]
-          if view == 'full' && mode == 'nxvd'
-            visible_limit += { 'og' => 2, 'x' => 1 }.fetch(device_name, 0)
+          remaining = (count - 1).clamp(0, 30)
+          expect(geometry['renderedRows']).to eq(remaining)
+          if remaining.zero? || (view == 'quadrant' && device_name.start_with?('og'))
+            expect(geometry['rows']).to eq(0)
+            expect(geometry['counter']).to be_nil
+          else
+            expect(geometry['rows']).to be_between(1, remaining)
+            hidden = remaining - geometry['rows']
+            if hidden.positive?
+              expect(geometry['counter']).to match(/\Aand #{hidden} more\z/i)
+              expect(geometry['unusedHeight']).to be < geometry['rowHeight'] + 1
+            else
+              expect(geometry['counter']).to be_nil
+            end
           end
-          markup_limit = view == 'full' ? 16 : row_limits.fetch('x')[view_index]
-          expect(geometry['rows']).to eq([remaining, visible_limit].min)
-          expect(geometry['renderedRows']).to eq([remaining, markup_limit].min)
           if count > 1 && view == 'full'
             expect(geometry['stackedMetadata']).to be(false)
             expect(geometry['beside']).to be(false)
@@ -163,6 +168,7 @@ RSpec.describe 'Nutanix Security layouts' do
             end
           end
           if geometry['rows'].positive?
+            expect(geometry['beside']).to eq(view == 'half_horizontal' && !device_name.end_with?('-portrait'))
             expect(geometry['headers'].last).to eq('Severity')
             if mode == 'nxvd' && (view == 'full' || device_name.start_with?('x'))
               expect(geometry['headers'].last(2)).to eq(%w[CVSS Severity])
@@ -176,34 +182,6 @@ RSpec.describe 'Nutanix Security layouts' do
           image.write("_build/previews/#{scenario}-#{device_name}-#{view}.png")
         end
       end
-    end
-  end
-
-  %w[og x].product(%w[advisories nxvd]).each do |device_name, mode|
-    it "keeps the full #{device_name} #{mode} layout steady while framework JavaScript loads" do
-      version = YAML.safe_load_file(File.expand_path('../src/settings.yml', __dir__)).fetch('framework_version')
-      overrides = {
-        "https://trmnl.com/js/#{version}/plugins.js" => {
-          body: 'window.TRMNL_PLUGINS_READY = true; window.nutanixCssOnly = true;',
-          content_type: 'application/javascript'
-        }
-      }
-      args = { view: 'full', device: devices.fetch(device_name),
-               custom_fields: { table_type: mode, nxvd_product: 'aos' }, mocks: cases.fetch(mode)[1] }
-      geometry = <<~JS
-        Array.from(document.querySelectorAll('[data-ns-mast], [data-ns-lead], [data-ns-subject], table, [data-ns-row]'))
-          .filter(element => element.getClientRects().length)
-          .map(element => {
-            const { x, y, width, height } = element.getBoundingClientRect();
-            return [x, y, width, height].map(Math.round);
-          })
-      JS
-      initial = trmnl.render(**args, asset_overrides: overrides)
-      expect(initial.evaluate('Boolean(window.nutanixCssOnly)')).to eq(true)
-      before = initial.evaluate(geometry)
-      settled = trmnl.render(**args)
-      expect(settled.evaluate('Boolean(window.TRMNL_PLUGINS_READY && !window.nutanixCssOnly)')).to eq(true)
-      expect(settled.evaluate(geometry)).to eq(before)
     end
   end
 
@@ -229,7 +207,7 @@ RSpec.describe 'Nutanix Security layouts' do
       expect(screen.result.state).to eq(live.state)
       expect(screen.result.requests.size).to eq(1)
       expect(screen.evaluate(<<~JS)).to eq(true)
-        [...document.querySelectorAll('[data-ns-lead], [data-ns-row]')].every(element =>
+        [...document.querySelectorAll('[data-ns-lead], table')].every(element =>
           element.getBoundingClientRect().bottom <= document.querySelector('.layout').getBoundingClientRect().bottom + 1)
       JS
 

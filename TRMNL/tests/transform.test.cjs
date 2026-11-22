@@ -117,21 +117,20 @@ test('NXVD requests one 20-row CVSS page instead of exporting the feed', async (
   }] });
 });
 
-test('Advisories keep only the leading 17 items after sorting', async () => {
-  const entries = Array.from({ length: 20 }, (_, index) => ({
+test('Advisories keep only the leading 31 items after sorting', async () => {
+  const entries = Array.from({ length: 34 }, (_, index) => ({
     ...advisory,
     advisoryNumber: index + 1,
-    date: `November ${index + 1}, 2026`,
+    date: new Date(Date.UTC(2026, 9, index + 1)).toISOString(),
     criticality: index === 0 ? 'Critical' : 'High',
   }));
   const payload = json({ content: { body: entries } });
+  const latestIds = entries.slice(-31).map(entry => String(entry.advisoryNumber));
   const latest = await refresh({ advisory_sort: 'latest' }, payload);
-  assert.deepEqual(latest.data.content.body.map(row => row.advisoryNumber),
-    ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']);
+  assert.deepEqual(latest.data.content.body.map(row => row.advisoryNumber), latestIds);
 
   const criticality = await refresh({ advisory_sort: 'criticality' }, payload);
-  assert.deepEqual(criticality.data.content.body.map(row => row.advisoryNumber),
-    ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '1']);
+  assert.deepEqual(criticality.data.content.body.map(row => row.advisoryNumber), [...latestIds.slice(1), '1']);
 });
 
 test('NXVD maps every saved product option to the portal product array', async () => {
@@ -162,7 +161,7 @@ test('All and unknown products use the same unfiltered request', async () => {
 });
 
 test('NXVD preserves the response order and caps oversized pages', async () => {
-  const rows = Array.from({ length: 25 }, (_, i) => ({
+  const rows = Array.from({ length: 35 }, (_, i) => ({
     ...vulnerability,
     cesa: String(i),
     status: i < 2 ? 'Pending Release' : 'Released',
@@ -170,7 +169,7 @@ test('NXVD preserves the response order and caps oversized pages', async () => {
     docUrl: 'https://private.example',
   }));
   const { data } = await refresh({ table_type: 'nxvd' }, nxvd(rows, 3000));
-  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 19).map((row) => row.cesa));
+  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 33).map((row) => row.cesa));
   assert.doesNotMatch(JSON.stringify(data), /PRIVATE|private\.example|jira|docUrl/);
 });
 
