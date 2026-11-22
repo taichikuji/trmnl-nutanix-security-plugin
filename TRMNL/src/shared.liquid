@@ -26,7 +26,7 @@
 {% if current_mode == 'nxvd' %}
   {% assign records = nxvd.rows %}
   {% assign heading = 'Vulnerability fixes' %}
-  {% assign lead_label = 'By CVSS' %}
+  {% assign lead_label = 'By criticality' %}
   {% assign table_heading = 'Released fixes' %}
 {% endif %}
 {% if feed_state == 'STALE' %}

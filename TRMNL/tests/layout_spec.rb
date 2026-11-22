@@ -73,6 +73,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
           if count.positive? && mode == 'nxvd'
+            expect(screen.find('[data-ns-order]').text).to eq('By criticality')
             expect(screen.find('[data-ns-score]').text).to eq('9.8')
             expect(screen).to have_text('Fixed in')
           elsif count.positive?
