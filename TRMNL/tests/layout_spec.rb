@@ -34,6 +34,16 @@ RSpec.describe 'Nutanix Security layouts' do
     'nxvd-error' => ['nxvd', { "POST #{nxvd_url}" => { status: 503 } }, 'HTTP 503', 0],
     'advisories-criticality' => ['advisories', advisory_mocks, 'CVE-2099-1019', advisories.size, 'criticality']
   }
+  # trmnlp occasionally times out while loading fonts in its screenshot browser.
+  # Retry only that transient renderer failure; keep layout assertions strict.
+  def render_with_font_retry(**options)
+    trmnl.render(**options)
+  rescue TRMNLP::RenderError => error
+    raise unless error.message.include?("fonts did not load within 10s")
+
+    trmnl.render(**options)
+  end
+
   devices = {
     'og' => { model: 'og_png', width: 800, height: 480, bit_depth: 1, screen_classes: 'screen screen--og_png screen--md screen--1bit' },
     'x' => { model: 'v2', width: 1872, height: 1404, bit_depth: 4, screen_classes: 'screen screen--v2 screen--lg screen--4bit' },
@@ -47,7 +57,7 @@ RSpec.describe 'Nutanix Security layouts' do
         it "renders #{scenario} on #{device_name} #{view}" do
           fields = { table_type: mode, nxvd_product: 'aos' }
           fields[:advisory_sort] = advisory_sort if advisory_sort
-          screen = trmnl.render(view: view, device: device, custom_fields: fields, mocks: mocks)
+          screen = render_with_font_retry(view: view, device: device, custom_fields: fields, mocks: mocks)
           expect(screen).to have_no_transform_error
           expect(screen).to have_text(label)
           expect(screen).to have_no_text('ALL CLEAR')
@@ -214,7 +224,7 @@ RSpec.describe 'Nutanix Security layouts' do
       expect(live.error).to be_nil
       expect(live.state.fetch('saved_at')).to start_with('2026-11-20T15:30:')
 
-      screen = trmnl.render(view: view, device: devices.fetch(device_name), custom_fields: fields,
+      screen = render_with_font_retry(view: view, device: devices.fetch(device_name), custom_fields: fields,
                             mocks: { mocks.keys.first => failure }, state: live.state)
       expect(screen).to have_no_transform_error
       expect(screen).to have_text('Saved 2026-11-20')
