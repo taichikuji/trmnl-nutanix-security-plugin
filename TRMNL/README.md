@@ -38,11 +38,11 @@ The full view on both TRMNL OG and X has a small QR code in the header. It opens
 
 The lead item sits in a dark panel above the table. Full landscape views give publication dates or products their own column, and X adds advisory numbers or fixed releases. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
-The templates cap the number of rows before rendering. Framework 3.4.6 handles typography, table sizing, and responsive visibility. Text clips in place as the browser lays out the page. The landscape limits below include the featured item.
+The templates limit the number of rendered rows. In full landscape layouts, the table reveals extra rows when they fit below the featured item. Framework 3.4.6 handles typography, table sizing, and responsive visibility. Text clips in place as the browser lays out the page. The landscape limits below include the featured item.
 
 | Layout | OG | X |
 | --- | ---: | ---: |
-| Full | 5 | 11 |
+| Full | Up to 9 | Up to 17 |
 | Half horizontal | 4 | 6 |
 | Half vertical | 5 | 10 |
 | Quadrant | 1 | 3 |
@@ -51,7 +51,7 @@ The templates cap the number of rows before rendering. Framework 3.4.6 handles t
 
 TRMNL's Polling strategy schedules refreshes. The Polling URL stays empty so Serverless can choose both the URL and HTTP method. TRMNL's Polling Verb setting applies one method to all configured URLs. [Dynamic Polling URLs](https://help.trmnl.com/en/articles/12689499-dynamic-polling-urls)
 
-Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 11 ranked items to TRMNL for the largest layout and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
+Each refresh makes one request to the selected Nutanix feed. The Advisories GET returns the whole catalog even with `limit` or `pageSize` set. NXVD requests the first 20 rows by descending CVSS, with a product filter when selected. Nutanix can return fewer rows than requested. Serverless sends up to 17 ranked items to TRMNL for the largest layout and keeps only fields used on screen. Check deployed versions separately to determine which fixes a cluster has.
 
 The public NXVD response has no publication date field. In testing, `DATE`, `PUBLICATION_DATE` and `RELEASE_DATE` returned the same rows in the same order as an unknown sort column.
 

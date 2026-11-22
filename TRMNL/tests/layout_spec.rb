@@ -18,7 +18,8 @@ RSpec.describe 'Nutanix Security layouts' do
 
   released = (1..20).map do |n|
     {
-      productName: 'AOS', status: 'Released', severity: n < 3 ? 'Critical' : 'High',
+      productName: 'AOS', status: 'Released',
+      severity: n == 4 ? 'Informational' : (n < 3 ? 'Critical' : 'High'),
       cvss: n < 3 ? 9.8 : 8.8, cveList: ["CVE-2099-#{1000 + n}", "CVE-2099-#{2000 + n}"],
       package: 'package-with-a-long-name', fixedReleases: ['aos.7.6', 'aos.7.5.0.2', 'aos.7.3.1.8']
     }
@@ -42,10 +43,10 @@ RSpec.describe 'Nutanix Security layouts' do
   }
   views = %w[full half_horizontal half_vertical quadrant]
   row_limits = {
-    'og' => [4, 3, 4, 0],
-    'og-portrait' => [8, 3, 8, 0],
-    'x' => [10, 5, 9, 2],
-    'x-portrait' => [10, 5, 9, 2]
+    'og' => [6, 3, 4, 0],
+    'og-portrait' => [11, 3, 8, 0],
+    'x' => [15, 5, 9, 2],
+    'x-portrait' => [12, 5, 9, 2]
   }
 
   cases.each do |scenario, (mode, mocks, label, count, advisory_sort)|
@@ -135,8 +136,13 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['tableFontSizes']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
           remaining = [count - 1, 0].max
-          expect(geometry['rows']).to eq([remaining, row_limits.fetch(device_name)[view_index]].min)
-          expect(geometry['renderedRows']).to eq([remaining, row_limits.fetch('x')[view_index]].min)
+          visible_limit = row_limits.fetch(device_name)[view_index]
+          if view == 'full' && mode == 'nxvd'
+            visible_limit += { 'og' => 2, 'x' => 1 }.fetch(device_name, 0)
+          end
+          markup_limit = view == 'full' ? 16 : row_limits.fetch('x')[view_index]
+          expect(geometry['rows']).to eq([remaining, visible_limit].min)
+          expect(geometry['renderedRows']).to eq([remaining, markup_limit].min)
           if count > 1 && view == 'full'
             expect(geometry['stackedMetadata']).to eq(device_name == 'og-portrait')
           end

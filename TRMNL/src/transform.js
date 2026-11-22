@@ -3,8 +3,8 @@ const SOURCE = 'https://portal.nutanix.com';
 const TIMEOUT_MS = 4500;
 const PAGE_SIZE = 20;
 const SAVED_STATE_BYTES = 8192;
-// The largest view uses one featured item and ten table rows.
-const DISPLAY_LIMIT = 11;
+// The largest view uses one featured item and sixteen table rows.
+const DISPLAY_LIMIT = 17;
 const ADVISORY_CRITICALITY = ['informational', 'low', 'medium', 'high', 'critical'];
 const PRODUCTS = new Map([
   ['aos', 'AOS'],

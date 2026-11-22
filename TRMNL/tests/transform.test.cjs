@@ -119,8 +119,8 @@ test('NXVD requests one 20-row CVSS page instead of exporting the feed', async (
   });
 });
 
-test('Advisories keep only the leading 11 items after sorting', async () => {
-  const entries = Array.from({ length: 16 }, (_, index) => ({
+test('Advisories keep only the leading 17 items after sorting', async () => {
+  const entries = Array.from({ length: 20 }, (_, index) => ({
     ...advisory,
     advisoryNumber: index + 1,
     date: `November ${index + 1}, 2026`,
@@ -129,11 +129,11 @@ test('Advisories keep only the leading 11 items after sorting', async () => {
   const payload = json({ content: { body: entries } });
   const latest = await refresh({ advisory_sort: 'latest' }, payload);
   assert.deepEqual(latest.data.content.body.map(row => row.advisoryNumber),
-    ['6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16']);
+    ['4', '5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20']);
 
   const criticality = await refresh({ advisory_sort: 'criticality' }, payload);
   assert.deepEqual(criticality.data.content.body.map(row => row.advisoryNumber),
-    ['7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '1']);
+    ['5', '6', '7', '8', '9', '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '20', '1']);
 });
 
 test('NXVD maps every saved product option to the portal product array', async () => {
@@ -173,10 +173,10 @@ test('NXVD counts retained rows, preserves the response order, and caps oversize
     docUrl: 'https://private.example',
   }));
   const { data } = await refresh({ table_type: 'nxvd' }, nxvd(rows, 3000));
-  assert.equal(data.nxvd.total, 11);
+  assert.equal(data.nxvd.total, 17);
   assert.equal(data.nxvd.critical, 8);
-  assert.equal(data.nxvd.high, 3);
-  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 13).map((row) => row.cesa));
+  assert.equal(data.nxvd.high, 9);
+  assert.deepEqual(data.nxvd.rows.map((row) => row.cesa), rows.slice(2, 19).map((row) => row.cesa));
   assert.doesNotMatch(JSON.stringify(data), /PRIVATE|private\.example|jira|docUrl/);
 });
 
