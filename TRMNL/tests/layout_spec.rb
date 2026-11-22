@@ -54,6 +54,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(screen.all('[data-ns-lead]').size).to eq(count.positive? ? 1 : 0)
           expect(screen.find('[data-ns-heading]').text).to eq(mode == 'nxvd' ? 'VULNERABILITY FIXES' : 'SECURITY ADVISORIES')
           expect(screen).to have_no_css('.title_bar')
+          expect(screen).to have_no_css('[data-ns-mast].border--h-black')
           expect(screen).to have_no_css('.layout a')
           expect(screen.has_css?('[data-ns-qr] svg.qr-code')).to eq(view == 'full')
           expect(screen).to have_no_css('[data-ns-mast] svg.qr-code')
@@ -62,7 +63,7 @@ RSpec.describe 'Nutanix Security layouts' do
             width = device_name.start_with?('x') ? 133.2 : 68
             expect(screen.box('[data-ns-qr] svg.qr-code').width).to be_within(0.1).of(width)
           end
-          expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 ? 1 : 0)
+          expect(screen.all('table[data-table-limit="true"]', visible: :all).size).to eq(count > 1 && view != 'full' ? 1 : 0)
           expect(screen.result.requests.size).to eq(1)
           expect(screen).to have_css('[data-ns-lead] [data-ns-subject]', text: label) if count.positive?
 
@@ -144,18 +145,32 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['rightGap']).to be <= 1
           expect(geometry['gutterDifference']).to be <= 1
           remaining = (count - 1).clamp(0, 30)
-          expect(geometry['renderedRows']).to eq(remaining)
-          if remaining.zero? || (view == 'quadrant' && device_name.start_with?('og'))
-            expect(geometry['rows']).to eq(0)
+          if view == 'full'
+            budget = { 'og' => 6, 'og-portrait' => 16, 'x' => 14, 'x-portrait' => 22 }.fetch(device_name)
+            shown = [remaining, budget].min
+            expect(geometry['renderedRows']).to eq(shown)
+            expect(geometry['rows']).to eq(shown)
             expect(geometry['counter']).to be_nil
-          else
-            expect(geometry['rows']).to be_between(1, remaining)
-            hidden = remaining - geometry['rows']
-            if hidden.positive?
-              expect(geometry['counter']).to match(/\Aand #{hidden} more\z/i)
-              expect(geometry['unusedHeight']).to be < geometry['rowHeight'] + 1
+            if remaining > shown
+              expect(screen.find('[data-ns-more]').text).to eq("+#{remaining - shown} more")
             else
+              expect(screen).to have_no_css('[data-ns-more]')
+            end
+          else
+            expect(geometry['renderedRows']).to eq(remaining)
+            expect(screen).to have_no_css('[data-ns-footer]')
+            if remaining.zero? || (view == 'quadrant' && device_name.start_with?('og'))
+              expect(geometry['rows']).to eq(0)
               expect(geometry['counter']).to be_nil
+            else
+              expect(geometry['rows']).to be_between(1, remaining)
+              hidden = remaining - geometry['rows']
+              if hidden.positive?
+                expect(geometry['counter']).to match(/\Aand #{hidden} more\z/i)
+                expect(geometry['unusedHeight']).to be < geometry['rowHeight'] + 1
+              else
+                expect(geometry['counter']).to be_nil
+              end
             end
           end
           if count > 1 && view == 'full'
