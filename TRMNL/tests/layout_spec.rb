@@ -154,7 +154,13 @@ RSpec.describe 'Nutanix Security layouts' do
           if count > 1 && view == 'full'
             expect(geometry['stackedMetadata']).to be(false)
             expect(geometry['beside']).to be(false)
-            expect(geometry['headers'].size).to eq(mode == 'nxvd' ? 4 : 3)
+            expect(geometry['headers'].size).to eq(4)
+            if mode == 'advisories'
+              expect(geometry['headers']).to eq(%w[Summary Published Advisory Severity])
+              expect(screen).to have_no_css('[data-ns-row] td:nth-child(2)', text: /#/)
+              expect(screen).to have_css('[data-ns-row] td:nth-child(3) > span',
+                                         text: advisory_sort == 'criticality' ? '#0018' : '#0019', exact_text: true)
+            end
           end
           if geometry['rows'].positive?
             expect(geometry['headers'].last).to eq('Severity')

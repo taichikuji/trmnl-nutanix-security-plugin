@@ -43,7 +43,7 @@
 {% case view %}
   {% when 'full' %}
     {% assign row_limit = 16 %}
-    {% assign severity_width = 'w--32' %}
+    {% assign severity_width = 'w--28' %}
     {% assign score_visibility = '' %}
   {% when 'half_horizontal' %}
     {% assign compact = true %}
@@ -142,14 +142,16 @@
             <table class="table nutanix-table w--full {% if compact or view == 'full' %}table--small{% endif %}">
               <thead>
                 <tr>
-                  <th scope="col"><span class="label label--base text--bold">{{ table_heading }}</span></th>
+                  <th scope="col"><span class="label label--base text--bold">{% if view == 'full' and current_mode == 'advisories' %}Summary{% else %}{{ table_heading }}{% endif %}</span></th>
                   {% if view == 'full' %}
-                    <th scope="col" class="{% if current_mode == 'nxvd' %}w--28 landscape:w--48 lg:w--64 lg:landscape:w--72{% else %}w--32 landscape:w--40 lg:w--48{% endif %}">
+                    <th scope="col" class="{% if current_mode == 'nxvd' %}w--28 landscape:w--48 lg:w--64 lg:landscape:w--72{% else %}w--28 lg:w--32{% endif %}">
                       <span class="label label--base text--bold">{% if current_mode == 'nxvd' %}Product / fix{% else %}Published{% endif %}</span>
                     </th>
                   {% endif %}
                   {% if current_mode == 'nxvd' %}
                     <th scope="col" class="w--12 text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">CVSS</span></th>
+                  {% elsif view == 'full' %}
+                    <th scope="col" class="w--20 landscape:w--24"><span class="label label--base text--bold">Advisory</span></th>
                   {% endif %}
                   <th scope="col" class="text--right {{ severity_width }}">
                     <span class="label label--base text--bold">Severity</span>
@@ -160,10 +162,8 @@
                 {% for entry in records offset: 1 limit: row_limit %}
                   {% assign severity = entry.severity | default: entry.criticality | default: 'Unrated' %}
                   {% assign details = entry.product %}
-                  {% assign detail_suffix = entry.fixed %}
                   {% unless current_mode == 'nxvd' %}
                     {% assign details = entry.date | date: '%b %-d, %Y' %}
-                    {% assign detail_suffix = entry.advisoryNumber | prepend: '#' %}
                   {% endunless %}
                   <tr data-ns-row{% if forloop.index > regular_rows %} class="hidden{% unless view == 'full' %} {% if forloop.index <= portrait_rows %}portrait:table-row {% endif %}lg:table-row{% endunless %}"{% endif %}>
                     <td>
@@ -177,12 +177,14 @@
                     {% if view == 'full' %}
                       <td>
                         <div class="label label--base block pr--2 nutanix-line">
-                          {{ details | escape }}{% if detail_suffix != blank %}{% if details != blank %} · {% endif %}{{ detail_suffix | escape }}{% endif %}
+                          {{ details | escape }}{% if current_mode == 'nxvd' and entry.fixed != blank %}{% if details != blank %} · {% endif %}{{ entry.fixed | escape }}{% endif %}
                         </div>
                       </td>
                     {% endif %}
                     {% if current_mode == 'nxvd' %}
                       <td class="text--right {{ score_visibility }}"><span class="label label--base text--bold pr--2">{{ entry.cvss | escape }}</span></td>
+                    {% elsif view == 'full' %}
+                      <td><span class="label label--base block pr--2 nutanix-line">#{{ entry.advisoryNumber | escape }}</span></td>
                     {% endif %}
                     <td class="text--right">
                       <div class="flex flex--row flex--right flex--center-y">

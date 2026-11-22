@@ -36,7 +36,7 @@ Rendered with public Nutanix data.
 
 The full view on both TRMNL OG and X has a small QR code in the header. It opens the selected table on Nutanix's support portal. NXVD opens with your selected product. The portal uses its own sort order.
 
-The full views share a lead panel and a table. Advisory rows group the publication date and advisory number. NXVD rows group the product and fixed releases, with separate columns for CVSS and severity. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
+The full views share a lead panel and a table. Advisory rows have separate columns for the publication date and advisory number. NXVD rows group the product and fixed releases, with separate columns for CVSS and severity. The landscape horizontal split puts the lead beside the table. The OG quadrant shows one featured item, and the X quadrant also fits a short table. [TRMNL X layout guide](https://trmnl.com/framework/docs/3.4/trmnl_x_guide)
 
 Full views show as many rows as fit below the lead, up to the 17-item data limit. The framework handles typography, table sizing, and responsive column widths. Text clips in place on first paint. The landscape limits below include the featured item.
 
