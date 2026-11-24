@@ -10,7 +10,7 @@ python3 scripts/package-import.py
 
 The local build writes `dist/trmnl-nutanix-sec-plugin.zip`. Open Private Plugins, select **Import new**, and upload the ZIP. Use **Advisory order** for Security Advisories or **Product (NXVD)** for the vulnerabilities table. [Private Plugins](https://trmnl.com/plugin_settings?keyname=private_plugin)
 
-For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Enable **Remove Bleed Margin** so the layouts can apply their own padding. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
+For manual setup, create a private plugin with Polling, an empty polling URL, Node Serverless and a 360-minute refresh interval. Copy the form fields from [settings.yml](src/settings.yml), paste [transform.js](src/transform.js) into Serverless, and copy the five Liquid files to their matching markup tabs.
 
 ## Icon
 

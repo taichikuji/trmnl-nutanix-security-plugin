@@ -134,7 +134,7 @@ RSpec.describe 'Nutanix Security layouts' do
                 rows: rows.length,
                 renderedRows: document.querySelectorAll('[data-ns-row]').length,
                 counter: counter?.textContent.trim(),
-                headerInset: mastBox.top - frame.top,
+                headerInset: mastBox.top - document.querySelector('.screen').getBoundingClientRect().top,
                 leadGap: lead ? lead.top - mastBox.bottom : null,
                 qrGap: tableBox && qr ? qr.top - tableBox.bottom : null,
                 footerGap: tableBox && footer ? Math.abs(footer.top - tableBox.bottom) : 0,
@@ -169,7 +169,7 @@ RSpec.describe 'Nutanix Security layouts' do
           expect(geometry['countBesideQr']).to be(true)
           if view == 'full'
             scale = device_name.start_with?('x') ? 1.8 : 1
-            expect(geometry['headerInset']).to be_within(1).of(scale == 1 ? 8 : 12 * scale)
+            expect(geometry['headerInset']).to be_within(1).of(10 * scale)
             expect(geometry['leadGap']).to be_within(1).of(8 * scale) if count.positive?
             expect(geometry['qrGap']).to be_within(1).of(4 * scale) if count > 1
           end
