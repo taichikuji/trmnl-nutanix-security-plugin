@@ -2,7 +2,9 @@
 
 ## Setup
 
-From the repository root, build the private plugin ZIP.
+[Install on TRMNL](https://trmnl.com/recipes/nutanix-security-547089). The recipe is currently unlisted while under review.
+
+For local development or manual import, build the private plugin ZIP from the repository root.
 
 ```sh
 python3 scripts/package-import.py

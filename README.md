@@ -2,9 +2,9 @@
 
 Read Nutanix security advisories and released vulnerability fixes on TRMNL. The plugin uses public Nutanix data and works without an API key.
 
-<a href="TRMNL/README.md#setup"><img width="150" alt="Works with TRMNL" src="https://trmnl.com/images/brand/badges/light/works-with-trmnl/trmnl-badge-works-with-light.svg" /></a>
+<a href="https://trmnl.com/recipes/nutanix-security-547089"><img width="150" alt="Works with TRMNL" src="https://trmnl.com/images/brand/badges/light/works-with-trmnl/trmnl-badge-works-with-light.svg" /></a>
 
-[Set up on TRMNL](TRMNL/README.md#setup)
+[Install on TRMNL](https://trmnl.com/recipes/nutanix-security-547089)
 
 ![Nutanix Security Advisories on TRMNL](TRMNL/media/preview_full.webp)
 
